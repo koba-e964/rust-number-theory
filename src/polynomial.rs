@@ -1,4 +1,6 @@
 extern crate num;
+
+use std::ops::{Add, AddAssign};
 use std::fmt::{Debug, Display};
 use num::{BigInt, BigRational, Zero};
 
@@ -9,9 +11,6 @@ pub struct Polynomial<R> {
 }
 
 impl<R: Zero> Polynomial<R> {
-    pub fn is_zero(&self) -> bool {
-        self.dat.len() == 0
-    }
     // If 0, returns usize::max_value().
     pub fn deg(&self) -> usize {
         if self.dat.len() == 0 {
@@ -34,6 +33,49 @@ impl<R: Zero> Polynomial<R> {
     pub fn from_mono(v: impl Into<R>) -> Self {
         Polynomial::from_raw(vec![v.into()])
     }
+    fn is_zero_primitive(&self) -> bool {
+        self.dat.len() == 0
+    }
+}
+
+impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
+    type Output = Polynomial<R>;
+    fn add(self, other: Self) -> Polynomial<R> {
+        if self.dat.len() == 0 {
+            return other.clone();
+        }
+        if other.dat.len() == 0 {
+            return self.clone();
+        }
+        let self_deg = self.deg();
+        let other_deg = other.deg();
+        let ret_deg = std::cmp::max(self_deg, other_deg);
+        let mut tmp = vec![R::zero(); ret_deg];
+        for i in 0 .. ret_deg + 1 {
+            if i <= self_deg {
+                tmp[i] += self.dat[i].clone();
+            }
+            if i <= other_deg {
+                tmp[i] += other.dat[i].clone();
+            }
+        }
+        Polynomial::from_raw(tmp)
+    }
+}
+impl<R: AddAssign + Clone + Zero> Add for Polynomial<R> {
+    type Output = Polynomial<R>;
+    fn add(self, other: Self) -> Self {
+        &self + &other
+    }
+}
+
+impl<R: AddAssign + Clone + Zero> Zero for Polynomial<R> {
+    fn is_zero(&self) -> bool {
+        self.is_zero_primitive()
+    }
+    fn zero() -> Self {
+        Polynomial { dat: Vec::new() }
+    }
 }
 
 impl<R: Display + std::cmp::PartialEq + Zero> Debug for Polynomial<R> {
@@ -43,7 +85,7 @@ impl<R: Display + std::cmp::PartialEq + Zero> Debug for Polynomial<R> {
 }
 impl<R: Display + std::cmp::PartialEq + Zero> Display for Polynomial<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.is_zero() {
+        if self.is_zero_primitive() {
             return Debug::fmt(&0, f);
         }
         let d = self.deg();
