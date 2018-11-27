@@ -61,4 +61,22 @@ mod tests {
         let q: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into()]);
         assert_eq!(resultant(&p, &q), 54.into());
     }
+    // delta = 2
+    #[test]
+    fn test_resultant_3() {
+        // x^4 + x^2 + 2
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into(), 0.into(), 1.into()]);
+        // x^2 + 1
+        let q: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 0.into(), 1.into()]);
+        assert_eq!(resultant(&p, &q), 4.into());
+    }
+    // delta = 3
+    #[test]
+    fn test_resultant_4() {
+        // x^6 + x^3 + 2
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 0.into(), 1.into(), 0.into(), 0.into(), 1.into()]);
+        // x^3 + 1
+        let q: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 0.into(), 0.into(), 1.into()]);
+        assert_eq!(resultant(&p, &q), 8.into());
+    }
 }

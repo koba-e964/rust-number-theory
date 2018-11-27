@@ -19,4 +19,10 @@ fn main() {
     let q: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into()]);
     let res = resultant(&p, &q);
     eprintln!("res = {}", res);
+    // x^6 + x^3 + 2
+    let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 0.into(), 1.into(), 0.into(), 0.into(), 1.into()]);
+    // x^3 + 1
+    let q: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 0.into(), 0.into(), 1.into()]);
+    let res = resultant(&p, &q);
+    eprintln!("res = {}", res);
 }
