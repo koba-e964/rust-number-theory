@@ -1,7 +1,7 @@
 extern crate num;
 
-use num::{BigInt, BigRational, Zero, pow};
-use polynomial::{Polynomial, div_rem_bigrational};
+use num::{BigInt, BigRational, One, Zero, pow};
+use polynomial::{Polynomial, div_rem_bigrational, pseudo_div_rem_bigint};
 
 // TODO using naive arithmetic
 pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>)
@@ -25,16 +25,50 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
     }
     sub
 }
+
+pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>)
+                       -> BigInt {
+    if f.is_zero() { return BigInt::zero(); }
+    let mut a = BigInt::one();
+    let mut b = BigInt::one();
+    let mut f = f.clone();
+    let mut g = g.clone();
+    let mut s = 1;
+    loop {
+        if g.is_zero() { return BigInt::zero(); }
+        let f_deg = f.deg();
+        let g_deg = g.deg();
+        if f_deg % 2 == 1 && g_deg % 2 == 1 {
+            s = -s;
+        }
+        if g_deg == 0 { break; }
+        if f_deg < g_deg {
+            std::mem::swap(&mut f, &mut g);
+            continue;
+        }
+        let delta = f_deg - g_deg;
+        let (_, h) = pseudo_div_rem_bigint(&f, &g);
+        f = g;
+        g = h;
+        // Divide g by a * b^delta
+        let factor = &a * pow(b.clone(), delta);
+        for i in 0 .. g.dat.len() {
+            g.dat[i] /= &factor;
+        }
+        a = f.dat[f.deg()].clone();
+        b = pow(a.clone(), delta) * &b / pow(b, delta);
+    }
+    debug_assert_eq!(g.deg(), 0);
+    debug_assert!(f.deg() >= 1);
+    let mut result = pow(g.dat.swap_remove(0), f.deg());
+    result /= pow(b, f.deg() - 1);
+    if s == -1 { result = -result; }
+    result
+}
+
 // Very naive way to calculate resultant(a, b).
-pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>)
-                 -> BigInt {
-    let ar = Polynomial::from_raw(
-        a.dat.iter().map(|x| x.clone().into()).collect());
-    let br = Polynomial::from_raw(
-        b.dat.iter().map(|x| x.clone().into()).collect());
-    let result = resultant_rational(&ar, &br);
-    assert!(result.is_integer());
-    result.to_integer()
+pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> BigInt {
+    resultant_smart(a, b)
 }
 
 
