@@ -13,4 +13,10 @@ fn main() {
     let res = resultant(&p, &q);
     eprintln!("resultant = {}", res);
     assert_eq!(res, 335159672.into());
+    // 2x^2 + 5x + 2
+    let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 5.into(), 2.into()]);
+    // x^2 + 2
+    let q: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into()]);
+    let res = resultant(&p, &q);
+    eprintln!("res = {}", res);
 }

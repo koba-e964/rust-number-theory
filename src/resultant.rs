@@ -53,4 +53,12 @@ mod tests {
             Polynomial::from_raw(vec![6.into(), 6.into(), 6.into(), 1.into(), 7.into()]);
         assert_eq!(resultant(&p1, &p2), 335159672.into());
     }
+    #[test]
+    fn test_resultant_2() {
+        // 2x^2 + 5x + 2
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 5.into(), 2.into()]);
+        // x^2 + 2
+        let q: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into()]);
+        assert_eq!(resultant(&p, &q), 54.into());
+    }
 }
