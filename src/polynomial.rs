@@ -40,6 +40,18 @@ impl<R: Zero> Polynomial<R> {
     }
 }
 
+impl Polynomial<BigInt> {
+    pub fn differential(&self) -> Polynomial<BigInt> {
+        if self.is_zero_primitive() { return self.clone(); }
+        let deg = self.deg();
+        let mut tmp = vec![0.into(); deg];
+        for i in 0 .. deg {
+            tmp[i] = &self.dat[i + 1] * (i + 1);
+        }
+        Polynomial::from_raw(tmp)
+    }
+}
+
 impl<R: One + PartialEq> Polynomial<R> {
     fn is_monic(&self) -> bool {
         if self.is_zero_primitive() { return false; }
