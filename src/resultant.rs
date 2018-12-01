@@ -3,7 +3,7 @@ extern crate num;
 use num::{BigInt, BigRational, One, Zero, pow};
 use polynomial::{Polynomial, div_rem_bigrational, pseudo_div_rem_bigint};
 
-// TODO using naive arithmetic
+/// Using naive arithmetic
 pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>)
              -> BigRational {
     if a.is_zero() || b.is_zero() {
@@ -66,7 +66,6 @@ pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>)
     result
 }
 
-// Very naive way to calculate resultant(a, b).
 pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> BigInt {
     resultant_smart(a, b)
 }

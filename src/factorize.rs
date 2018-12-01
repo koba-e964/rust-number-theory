@@ -8,7 +8,7 @@ pub fn factorize(n: &BigInt) -> Vec<(BigInt, usize)> {
     let mut p: BigInt = 2.into();
     let mut n = n.clone();
     let mut fac = Vec::new();
-    while &(&p * &p) <= &n {
+    while &p * &p <= n {
         let mut e = 0;
         while (&n % &p).is_zero() {
             e += 1;
