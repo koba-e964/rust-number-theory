@@ -5,6 +5,7 @@ pub mod factorize;
 pub mod polynomial;
 pub mod resultant;
 pub mod discriminant;
+pub mod determinant;
 
 use num::BigInt;
 use polynomial::Polynomial;
