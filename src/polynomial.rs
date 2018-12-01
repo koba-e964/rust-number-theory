@@ -72,7 +72,7 @@ impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
         let self_deg = self.deg();
         let other_deg = other.deg();
         let ret_deg = std::cmp::max(self_deg, other_deg);
-        let mut tmp = vec![R::zero(); ret_deg];
+        let mut tmp = vec![R::zero(); ret_deg + 1];
         for i in 0 .. ret_deg + 1 {
             if i <= self_deg {
                 tmp[i] += self.dat[i].clone();
@@ -134,7 +134,7 @@ impl<'a, R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &'a 
         let self_deg = self.deg();
         let other_deg = other.deg();
         let ret_deg = std::cmp::max(self_deg, other_deg);
-        let mut tmp = vec![R::zero(); ret_deg];
+        let mut tmp = vec![R::zero(); ret_deg + 1];
         for i in 0 .. ret_deg + 1 {
             if i <= self_deg {
                 tmp[i] += self.dat[i].clone();

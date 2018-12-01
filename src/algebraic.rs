@@ -1,0 +1,151 @@
+extern crate num;
+
+use std::ops::{Add, Sub, Mul};
+use num::{BigInt, BigRational, Zero};
+use polynomial::Polynomial;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Algebraic {
+    min_poly: Polynomial<BigInt>,
+    expr: Polynomial<BigRational>,
+}
+
+impl Algebraic {
+    /// minimal_poly should be irreducible in Z[x].
+    pub fn new(minimal_poly: Polynomial<BigInt>) -> Self {
+        Algebraic {
+            min_poly: minimal_poly,
+            expr: Polynomial::from_raw(vec![BigRational::from_integer(0.into()), BigRational::from_integer(1.into())]),
+        }
+    }
+    pub fn new_const(minimal_poly: Polynomial<BigInt>, x: BigRational) -> Self {
+        Algebraic {
+            min_poly: minimal_poly,
+            expr: Polynomial::from_raw(vec![x]),
+        }
+    }
+    pub fn from_int(minimal_poly: Polynomial<BigInt>, x: impl Into<BigInt>) -> Self {
+        let u: BigInt = x.into();
+        Algebraic {
+            min_poly: minimal_poly,
+            expr: Polynomial::from_raw(vec![u.into()]),
+        }
+    }
+}
+
+// Operations on Algebraic assume that all numbers' min_poly are the same.
+
+impl Add for Algebraic {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Algebraic {
+            min_poly: self.min_poly,
+            expr: self.expr + other.expr,
+        }
+    }
+}
+impl<'a> Add for &'a Algebraic {
+    type Output = Algebraic;
+    fn add(self, other: Self) -> Algebraic {
+        Algebraic {
+            min_poly: self.min_poly.clone(),
+            expr: &self.expr + &other.expr,
+        }
+    }
+}
+
+impl Sub for Algebraic {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Algebraic {
+            min_poly: self.min_poly,
+            expr: self.expr - other.expr,
+        }
+    }
+}
+impl<'a> Sub for &'a Algebraic {
+    type Output = Algebraic;
+    fn sub(self, other: Self) -> Algebraic {
+        Algebraic {
+            min_poly: self.min_poly.clone(),
+            expr: &self.expr - &other.expr,
+        }
+    }
+}
+
+/// Computes (a * b) mod c.
+fn mul_with_mod<T: Into<BigRational> + Clone>(
+    a: &Polynomial<BigRational>,
+    b: &Polynomial<BigRational>,
+    c: &Polynomial<T>) -> Polynomial<BigRational> {
+    if a.is_zero() || b.is_zero() {
+        return Polynomial::zero();
+    }
+    let n = c.deg();
+    let a_deg = a.deg();
+    let b_deg = b.deg();
+    assert!(a_deg < n);
+    assert!(b_deg < n);
+    let mut result = vec![BigRational::from_integer(0.into()); n];
+    // Stores b * x^i
+    let mut cur = vec![BigRational::from_integer(0.into()); n + 1];
+    for i in 0 .. b_deg + 1 {
+        cur[i] = b.dat[i].clone();
+    }
+    let lc = c.dat[n].clone().into();
+    for i in 0 .. a_deg + 1 {
+        for j in 0 .. n {
+            result[j] += &a.dat[i] * &cur[j];
+        }
+        if i < a_deg {
+            // cur = cur * x
+            for j in (0 .. n).rev() {
+                cur.swap(j, j + 1);
+            }
+            // cur = cur % c
+            let coef = &cur[n] / &lc;
+            for j in 0 .. n {
+                cur[j] -= &coef * &c.dat[j].clone().into();
+            }
+            cur[n] = BigRational::from_integer(0.into());
+        }
+    }
+    Polynomial::from_raw(result)
+}
+
+impl Mul for Algebraic {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        Algebraic {
+            expr: mul_with_mod(&self.expr, &other.expr, &self.min_poly),
+            min_poly: self.min_poly,
+        }
+    }
+}
+impl<'a> Mul for &'a Algebraic {
+    type Output = Algebraic;
+    fn mul(self, other: Self) -> Algebraic {
+        Algebraic {
+            min_poly: self.min_poly.clone(),
+            expr: mul_with_mod(&self.expr, &other.expr, &self.min_poly),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use num::BigInt;
+    use polynomial::Polynomial;
+    use super::Algebraic;
+    #[test]
+    fn test_alg_mul() {
+        // Let theta be an algebraic number whose minimal polynomial is x^3 + x + 1.
+        // Let eta = theta^2.
+        // eta^3 + 2 * eta^2 + eta - 1 = 0
+        let f = Polynomial::from_raw(vec![1.into(), 1.into(), 0.into(), 1.into()]);
+        let theta = Algebraic::new(f.clone());
+        let eta = &theta * &theta;
+        let result = &eta * &(&eta * &eta) + &eta * &eta * Algebraic::from_int(f.clone(), 2) + eta - Algebraic::from_int(f.clone(), 1);
+        assert_eq!(result, Algebraic::from_int(f.clone(), 0));
+    }
+}

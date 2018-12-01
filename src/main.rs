@@ -1,5 +1,6 @@
 extern crate num;
 
+pub mod algebraic;
 pub mod factorize;
 pub mod polynomial;
 pub mod resultant;
