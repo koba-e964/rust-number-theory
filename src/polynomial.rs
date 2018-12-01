@@ -1,6 +1,6 @@
 extern crate num;
 
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, Neg};
 use std::fmt::{Debug, Display};
 use num::{BigInt, BigRational, One, Zero, pow};
 
@@ -85,9 +85,103 @@ impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
     }
 }
 impl<R: AddAssign + Clone + Zero> Add for Polynomial<R> {
-    type Output = Polynomial<R>;
+    type Output = Self;
     fn add(self, other: Self) -> Self {
+        if self.dat.len() == 0 {
+            return other.clone();
+        }
+        if other.dat.len() == 0 {
+            return self.clone();
+        }
         &self + &other
+    }
+}
+
+impl<R: Neg<Output = R>> Neg for Polynomial<R> {
+    type Output = Self;
+    fn neg(self) -> Self {
+        let mut dat = self.dat;
+        for i in 0 .. dat.len() {
+            unsafe {
+                let mut tmp = std::mem::uninitialized();
+                std::mem::swap(&mut tmp, &mut dat[i]);
+                tmp = -tmp;
+                std::mem::swap(&mut tmp, &mut dat[i]);
+                std::mem::forget(tmp);
+            }
+        }
+        Polynomial {
+            dat: dat
+        }
+    }
+}
+impl<'a, R: Neg<Output = R> + Clone> Neg for &'a Polynomial<R> {
+    type Output = Polynomial<R>;
+    fn neg(self) -> Polynomial<R> {
+        -self.clone()
+    }
+}
+
+impl<'a, R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &'a Polynomial<R> {
+    type Output = Polynomial<R>;
+    fn sub(self, other: Self) -> Polynomial<R> {
+        if self.dat.len() == 0 {
+            return -other;
+        }
+        if other.dat.len() == 0 {
+            return self.clone();
+        }
+        let self_deg = self.deg();
+        let other_deg = other.deg();
+        let ret_deg = std::cmp::max(self_deg, other_deg);
+        let mut tmp = vec![R::zero(); ret_deg];
+        for i in 0 .. ret_deg + 1 {
+            if i <= self_deg {
+                tmp[i] += self.dat[i].clone();
+            }
+            if i <= other_deg {
+                tmp[i] -= other.dat[i].clone();
+            }
+        }
+        Polynomial::from_raw(tmp)
+    }
+}
+impl<R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for Polynomial<R> {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        if self.dat.len() == 0 {
+            return -other;
+        }
+        if other.dat.len() == 0 {
+            return self.clone();
+        }
+        &self - &other
+    }
+}
+
+impl<'a, R: AddAssign + Clone + Zero> Mul for &'a Polynomial<R>
+where for<'b> &'b R: Mul<Output = R> {
+    type Output = Polynomial<R>;
+    fn mul(self, other: Self) -> Polynomial<R> {
+        if self.is_zero_primitive() || other.is_zero_primitive() {
+            return Polynomial::from_raw(Vec::new());
+        }
+        let a_deg = self.deg();
+        let b_deg = other.deg();
+        let mut result = vec![R::zero(); a_deg + b_deg + 1];
+        for i in 0 .. a_deg + 1 {
+            for j in 0 .. b_deg + 1 {
+                result[i + j] += &self.dat[i] * &other.dat[j];
+            }
+        }
+        Polynomial::from_raw(result)
+    }
+}
+impl<R: AddAssign + Clone + Zero> Mul for Polynomial<R>
+where for<'a> &'a R: Mul<Output = R> {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        &self * &other
     }
 }
 
@@ -128,7 +222,6 @@ impl<R: Display + std::cmp::PartialEq + Zero> Display for Polynomial<R> {
         Ok(())
     }
 }
-
 
 // b should be monic, or it panics.
 pub fn div_rem_bigint(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>)
@@ -193,8 +286,22 @@ pub fn div_rem_bigrational(a: &Polynomial<BigRational>, b: &Polynomial<BigRation
 
 #[cfg(test)]
 mod tests {
-    use num::BigInt;
+    use num::{BigInt, Zero};
     use super::{Polynomial, div_rem_bigint, div_rem_bigrational, pseudo_div_rem_bigint};
+    #[test]
+    fn test_sub_zero() {
+        let p1: Polynomial<BigInt> = Polynomial::zero();
+        let p2: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 2.into()]);
+        assert_eq!(p1 - p2, Polynomial::from_raw(vec![(-1).into(), (-2).into()]));
+    }
+    #[test]
+    fn test_mul_bigint() {
+        // x^2 + x + 1
+        let p1: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 1.into(), 1.into()]);
+        // x - 1
+        let p2: Polynomial<BigInt> = Polynomial::from_raw(vec![(-1).into(), 1.into()]);
+        assert_eq!(p1 * p2, Polynomial::from_raw(vec![(-1).into(), 0.into(), 0.into(), 1.into()]));
+    }
     #[test]
     fn test_div_rem_bigint() {
         // x^4 + x^2 + 1
