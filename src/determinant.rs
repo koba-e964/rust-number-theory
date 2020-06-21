@@ -11,6 +11,7 @@ pub fn determinant(a: &[Vec<BigRational>]) -> BigRational {
     let mut result = BigRational::one();
     for i in 0..n {
         let mut idx = None;
+        #[allow(clippy::needless_range_loop)]
         for j in i..n {
             if a[j][i] != BigRational::zero() {
                 idx = Some(j);

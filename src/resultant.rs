@@ -27,6 +27,7 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
     sub
 }
 
+#[allow(clippy::many_single_char_names)]
 pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> BigInt {
     if f.is_zero() {
         return BigInt::zero();

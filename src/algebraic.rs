@@ -95,9 +95,7 @@ fn mul_with_mod<T: Into<BigRational> + Clone>(
     let mut result = vec![BigRational::from_integer(0.into()); n];
     // Stores b * x^i
     let mut cur = vec![BigRational::from_integer(0.into()); n + 1];
-    for i in 0..b_deg + 1 {
-        cur[i] = b.dat[i].clone();
-    }
+    cur[..b_deg + 1].clone_from_slice(&b.dat[..b_deg + 1]);
     let lc = c.dat[n].clone().into();
     for i in 0..a_deg + 1 {
         for j in 0..n {
@@ -110,6 +108,7 @@ fn mul_with_mod<T: Into<BigRational> + Clone>(
             }
             // cur = cur % c
             let coef = &cur[n] / &lc;
+            #[allow(clippy::needless_range_loop)]
             for j in 0..n {
                 cur[j] -= &coef * &c.dat[j].clone().into();
             }
@@ -152,6 +151,6 @@ mod tests {
         let eta = &theta * &theta;
         let result = &eta * &(&eta * &eta) + &eta * &eta * Algebraic::from_int(f.clone(), 2) + eta
             - Algebraic::from_int(f.clone(), 1);
-        assert_eq!(result, Algebraic::from_int(f.clone(), 0));
+        assert_eq!(result, Algebraic::from_int(f, 0));
     }
 }

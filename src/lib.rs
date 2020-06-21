@@ -1,3 +1,5 @@
+#![allow(clippy::suspicious_arithmetic_impl)]
+
 extern crate num;
 
 pub mod algebraic;

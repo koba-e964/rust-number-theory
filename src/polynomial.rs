@@ -13,14 +13,14 @@ pub struct Polynomial<R> {
 impl<R> Polynomial<R> {
     // If 0, returns usize::max_value().
     pub fn deg(&self) -> usize {
-        if self.dat.len() == 0 {
+        if self.dat.is_empty() {
             usize::max_value()
         } else {
             self.dat.len() - 1
         }
     }
     fn is_zero_primitive(&self) -> bool {
-        self.dat.len() == 0
+        self.dat.is_empty()
     }
 }
 impl<R: Zero> Polynomial<R> {
@@ -47,6 +47,7 @@ impl Polynomial<BigInt> {
         }
         let deg = self.deg();
         let mut tmp = vec![0.into(); deg];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..deg {
             tmp[i] = &self.dat[i + 1] * (i + 1);
         }
@@ -67,16 +68,17 @@ impl<R: One + PartialEq> Polynomial<R> {
 impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
     type Output = Polynomial<R>;
     fn add(self, other: Self) -> Polynomial<R> {
-        if self.dat.len() == 0 {
+        if self.dat.is_empty() {
             return other.clone();
         }
-        if other.dat.len() == 0 {
+        if other.dat.is_empty() {
             return self.clone();
         }
         let self_deg = self.deg();
         let other_deg = other.deg();
         let ret_deg = std::cmp::max(self_deg, other_deg);
         let mut tmp = vec![R::zero(); ret_deg + 1];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..ret_deg + 1 {
             if i <= self_deg {
                 tmp[i] += self.dat[i].clone();
@@ -91,11 +93,11 @@ impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
 impl<R: AddAssign + Clone + Zero> Add for Polynomial<R> {
     type Output = Self;
     fn add(self, other: Self) -> Self {
-        if self.dat.len() == 0 {
-            return other.clone();
+        if self.dat.is_empty() {
+            return other;
         }
-        if other.dat.len() == 0 {
-            return self.clone();
+        if other.dat.is_empty() {
+            return self;
         }
         &self + &other
     }
@@ -105,14 +107,14 @@ impl<R: Neg<Output = R>> Neg for Polynomial<R> {
     type Output = Self;
     fn neg(self) -> Self {
         let mut dat = self.dat;
-        for i in 0..dat.len() {
+        for coef in dat.iter_mut() {
             unsafe {
-                let mut tmp = std::ptr::read(&mut dat[i] as *mut R);
+                let mut tmp = std::ptr::read(coef as *mut R);
                 tmp = -tmp;
-                std::ptr::write(&mut dat[i] as *mut _, tmp);
+                std::ptr::write(coef as *mut _, tmp);
             }
         }
-        Polynomial { dat: dat }
+        Polynomial { dat }
     }
 }
 impl<'a, R: Neg<Output = R> + Clone> Neg for &'a Polynomial<R> {
@@ -125,16 +127,17 @@ impl<'a, R: Neg<Output = R> + Clone> Neg for &'a Polynomial<R> {
 impl<'a, R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &'a Polynomial<R> {
     type Output = Polynomial<R>;
     fn sub(self, other: Self) -> Polynomial<R> {
-        if self.dat.len() == 0 {
+        if self.dat.is_empty() {
             return -other;
         }
-        if other.dat.len() == 0 {
+        if other.dat.is_empty() {
             return self.clone();
         }
         let self_deg = self.deg();
         let other_deg = other.deg();
         let ret_deg = std::cmp::max(self_deg, other_deg);
         let mut tmp = vec![R::zero(); ret_deg + 1];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..ret_deg + 1 {
             if i <= self_deg {
                 tmp[i] += self.dat[i].clone();
@@ -149,11 +152,11 @@ impl<'a, R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &'a 
 impl<R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for Polynomial<R> {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
-        if self.dat.len() == 0 {
+        if self.dat.is_empty() {
             return -other;
         }
-        if other.dat.len() == 0 {
-            return self.clone();
+        if other.dat.is_empty() {
+            return self;
         }
         &self - &other
     }
@@ -256,8 +259,8 @@ pub fn pseudo_div_rem_bigint(
     let diff = a_deg - b_deg;
     // Multiply a (tmp) by lcb^{diff + 1}
     let factor = pow(lcb.clone(), diff + 1);
-    for i in 0..a_deg + 1 {
-        tmp[i] *= &factor;
+    for coef in tmp.iter_mut() {
+        *coef *= &factor;
     }
 
     // Naive division
