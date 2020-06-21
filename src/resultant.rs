@@ -1,11 +1,10 @@
 extern crate num;
 
-use num::{BigInt, BigRational, One, Zero, pow};
-use polynomial::{Polynomial, div_rem_bigrational, pseudo_div_rem_bigint};
+use num::{pow, BigInt, BigRational, One, Zero};
+use polynomial::{div_rem_bigrational, pseudo_div_rem_bigint, Polynomial};
 
 /// Using naive arithmetic
-pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>)
-             -> BigRational {
+pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>) -> BigRational {
     if a.is_zero() || b.is_zero() {
         return BigRational::zero();
     }
@@ -17,7 +16,9 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
     }
     let (_, r) = div_rem_bigrational(a, b);
     let r_deg = r.deg();
-    if r_deg == usize::max_value() { return BigRational::zero(); }
+    if r_deg == usize::max_value() {
+        return BigRational::zero();
+    }
     let mut sub = resultant_rational(b, &r);
     sub *= pow(b.dat[b_deg].clone(), a_deg - r_deg);
     if a_deg % 2 == 1 && b_deg % 2 == 1 {
@@ -26,22 +27,27 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
     sub
 }
 
-pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>)
-                       -> BigInt {
-    if f.is_zero() { return BigInt::zero(); }
+pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> BigInt {
+    if f.is_zero() {
+        return BigInt::zero();
+    }
     let mut a = BigInt::one();
     let mut b = BigInt::one();
     let mut f = f.clone();
     let mut g = g.clone();
     let mut s = 1;
     loop {
-        if g.is_zero() { return BigInt::zero(); }
+        if g.is_zero() {
+            return BigInt::zero();
+        }
         let f_deg = f.deg();
         let g_deg = g.deg();
         if f_deg % 2 == 1 && g_deg % 2 == 1 {
             s = -s;
         }
-        if g_deg == 0 { break; }
+        if g_deg == 0 {
+            break;
+        }
         if f_deg < g_deg {
             std::mem::swap(&mut f, &mut g);
             continue;
@@ -52,7 +58,7 @@ pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>)
         g = h;
         // Divide g by a * b^delta
         let factor = &a * pow(b.clone(), delta);
-        for i in 0 .. g.dat.len() {
+        for i in 0..g.dat.len() {
             g.dat[i] /= &factor;
         }
         a = f.dat[f.deg()].clone();
@@ -62,7 +68,9 @@ pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>)
     debug_assert!(f.deg() >= 1);
     let mut result = pow(g.dat.swap_remove(0), f.deg());
     result /= pow(b, f.deg() - 1);
-    if s == -1 { result = -result; }
+    if s == -1 {
+        result = -result;
+    }
     result
 }
 
@@ -70,17 +78,22 @@ pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> BigInt {
     resultant_smart(a, b)
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::resultant;
     use num::BigInt;
     use polynomial::Polynomial;
-    use super::resultant;
     #[test]
     fn test_resultant() {
         // 9x^5 + 6x^4 + 2x^2 + 5
-        let p1: Polynomial<BigInt> =
-            Polynomial::from_raw(vec![5.into(), 0.into(), 2.into(), 0.into(), 6.into(), 9.into()]);
+        let p1: Polynomial<BigInt> = Polynomial::from_raw(vec![
+            5.into(),
+            0.into(),
+            2.into(),
+            0.into(),
+            6.into(),
+            9.into(),
+        ]);
         // 7x^4 + x^3 + 6x^2 + 6x + 6
         let p2: Polynomial<BigInt> =
             Polynomial::from_raw(vec![6.into(), 6.into(), 6.into(), 1.into(), 7.into()]);
@@ -98,7 +111,8 @@ mod tests {
     #[test]
     fn test_resultant_3() {
         // x^4 + x^2 + 2
-        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 1.into(), 0.into(), 1.into()]);
+        let p: Polynomial<BigInt> =
+            Polynomial::from_raw(vec![2.into(), 0.into(), 1.into(), 0.into(), 1.into()]);
         // x^2 + 1
         let q: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 0.into(), 1.into()]);
         assert_eq!(resultant(&p, &q), 4.into());
@@ -107,9 +121,18 @@ mod tests {
     #[test]
     fn test_resultant_4() {
         // x^6 + x^3 + 2
-        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 0.into(), 0.into(), 1.into(), 0.into(), 0.into(), 1.into()]);
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![
+            2.into(),
+            0.into(),
+            0.into(),
+            1.into(),
+            0.into(),
+            0.into(),
+            1.into(),
+        ]);
         // x^3 + 1
-        let q: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 0.into(), 0.into(), 1.into()]);
+        let q: Polynomial<BigInt> =
+            Polynomial::from_raw(vec![1.into(), 0.into(), 0.into(), 1.into()]);
         assert_eq!(resultant(&p, &q), 8.into());
     }
 }

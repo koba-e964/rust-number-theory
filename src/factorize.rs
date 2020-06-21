@@ -38,9 +38,15 @@ mod tests {
     fn test_factorize_2() {
         let mut res = factorize(&36355439941184i64.into());
         res.sort_unstable();
-        assert_eq!(res, [
-            (2.into(), 6), (7.into(), 1), (13.into(), 1),
-            (149.into(), 1), (41894959.into(), 1)]);
+        assert_eq!(
+            res,
+            [
+                (2.into(), 6),
+                (7.into(), 1),
+                (13.into(), 1),
+                (149.into(), 1),
+                (41894959.into(), 1)
+            ]
+        );
     }
-    
 }

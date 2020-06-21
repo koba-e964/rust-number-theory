@@ -14,21 +14,19 @@ pub fn discriminant(f: &Polynomial<BigInt>) -> BigInt {
 }
 #[cfg(test)]
 mod tests {
+    use super::discriminant;
     use num::BigInt;
     use polynomial::Polynomial;
-    use super::discriminant;
     #[test]
     fn test_discriminant_linear() {
         // 1771x + 24
-        let p: Polynomial<BigInt> =
-            Polynomial::from_raw(vec![24.into(), 1771.into()]);
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![24.into(), 1771.into()]);
         assert_eq!(discriminant(&p), 1.into());
     }
     #[test]
     fn test_discriminant_quadratic() {
         // 31x^2 + 1771x + 24
-        let p: Polynomial<BigInt> =
-            Polynomial::from_raw(vec![24.into(), 1771.into(), 31.into()]);
+        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![24.into(), 1771.into(), 31.into()]);
         assert_eq!(discriminant(&p), (1771 * 1771 - 4 * 24 * 31).into());
     }
     #[test]
@@ -41,7 +39,8 @@ mod tests {
     #[test]
     fn test_discriminant_cubic_2() {
         // 2x^3 + x^2 - 2x + 3
-        let p: Polynomial<BigInt> = Polynomial::from_raw(vec![3.into(), (-2).into(), 1.into(), 2.into()]);
+        let p: Polynomial<BigInt> =
+            Polynomial::from_raw(vec![3.into(), (-2).into(), 1.into(), 2.into()]);
         assert_eq!(discriminant(&p), (-1132).into());
     }
 }

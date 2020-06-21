@@ -1,0 +1,14 @@
+language: rust
+
+before_script:
+  - rustup component add clippy rustfmt
+  - cargo clippy --version
+
+env:
+  global:
+    - RUSTFLAGS="-D warnings"
+
+script:
+  - cargo test --all --locked
+  - cargo clippy --all --all-targets --locked
+  - cargo fmt -- --check
