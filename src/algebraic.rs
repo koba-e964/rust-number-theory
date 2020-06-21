@@ -1,8 +1,6 @@
-extern crate num;
-
-use std::ops::{Add, Sub, Mul};
 use num::{BigInt, BigRational, Zero};
 use polynomial::Polynomial;
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Algebraic {
@@ -15,7 +13,10 @@ impl Algebraic {
     pub fn new(minimal_poly: Polynomial<BigInt>) -> Self {
         Algebraic {
             min_poly: minimal_poly,
-            expr: Polynomial::from_raw(vec![BigRational::from_integer(0.into()), BigRational::from_integer(1.into())]),
+            expr: Polynomial::from_raw(vec![
+                BigRational::from_integer(0.into()),
+                BigRational::from_integer(1.into()),
+            ]),
         }
     }
     pub fn new_const(minimal_poly: Polynomial<BigInt>, x: BigRational) -> Self {
@@ -30,6 +31,10 @@ impl Algebraic {
             min_poly: minimal_poly,
             expr: Polynomial::from_raw(vec![u.into()]),
         }
+    }
+    /// Returns its minimal polynomial's degree.
+    pub fn deg(&self) -> usize {
+        self.min_poly.deg()
     }
 }
 
@@ -77,7 +82,8 @@ impl<'a> Sub for &'a Algebraic {
 fn mul_with_mod<T: Into<BigRational> + Clone>(
     a: &Polynomial<BigRational>,
     b: &Polynomial<BigRational>,
-    c: &Polynomial<T>) -> Polynomial<BigRational> {
+    c: &Polynomial<T>,
+) -> Polynomial<BigRational> {
     if a.is_zero() || b.is_zero() {
         return Polynomial::zero();
     }
@@ -89,22 +95,22 @@ fn mul_with_mod<T: Into<BigRational> + Clone>(
     let mut result = vec![BigRational::from_integer(0.into()); n];
     // Stores b * x^i
     let mut cur = vec![BigRational::from_integer(0.into()); n + 1];
-    for i in 0 .. b_deg + 1 {
+    for i in 0..b_deg + 1 {
         cur[i] = b.dat[i].clone();
     }
     let lc = c.dat[n].clone().into();
-    for i in 0 .. a_deg + 1 {
-        for j in 0 .. n {
+    for i in 0..a_deg + 1 {
+        for j in 0..n {
             result[j] += &a.dat[i] * &cur[j];
         }
         if i < a_deg {
             // cur = cur * x
-            for j in (0 .. n).rev() {
+            for j in (0..n).rev() {
                 cur.swap(j, j + 1);
             }
             // cur = cur % c
             let coef = &cur[n] / &lc;
-            for j in 0 .. n {
+            for j in 0..n {
                 cur[j] -= &coef * &c.dat[j].clone().into();
             }
             cur[n] = BigRational::from_integer(0.into());
@@ -134,9 +140,8 @@ impl<'a> Mul for &'a Algebraic {
 
 #[cfg(test)]
 mod tests {
-    use num::BigInt;
-    use polynomial::Polynomial;
     use super::Algebraic;
+    use polynomial::Polynomial;
     #[test]
     fn test_alg_mul() {
         // Let theta be an algebraic number whose minimal polynomial is x^3 + x + 1.
@@ -145,7 +150,8 @@ mod tests {
         let f = Polynomial::from_raw(vec![1.into(), 1.into(), 0.into(), 1.into()]);
         let theta = Algebraic::new(f.clone());
         let eta = &theta * &theta;
-        let result = &eta * &(&eta * &eta) + &eta * &eta * Algebraic::from_int(f.clone(), 2) + eta - Algebraic::from_int(f.clone(), 1);
+        let result = &eta * &(&eta * &eta) + &eta * &eta * Algebraic::from_int(f.clone(), 2) + eta
+            - Algebraic::from_int(f.clone(), 1);
         assert_eq!(result, Algebraic::from_int(f.clone(), 0));
     }
 }
