@@ -4,7 +4,7 @@ use num::{BigInt, BigRational, One, Zero};
 use algebraic::Algebraic;
 use determinant::determinant;
 use discriminant::discriminant;
-use hnf;
+use hnf::HNF;
 
 /// Order. Constructed from n vectors independent over Q.
 #[derive(Clone, Debug)]
@@ -103,22 +103,23 @@ pub fn union(a: &Order, b: &Order) -> Order {
             lcm = num::integer::lcm(lcm, den.clone());
         }
     }
-    let mut mat = vec![vec![BigInt::zero(); m]; na + nb];
+    let mut basis_a = vec![vec![BigInt::zero(); m]; na];
+    let mut basis_b = vec![vec![BigInt::zero(); m]; nb];
     #[allow(clippy::needless_range_loop)]
     for i in 0..na {
         for j in 0..m {
             let val = (&a.basis[i][j] * &lcm).to_integer();
-            mat[i][j] = val;
+            basis_a[i][j] = val;
         }
     }
     #[allow(clippy::needless_range_loop)]
     for i in 0..nb {
         for j in 0..m {
             let val = (&b.basis[i][j] * &lcm).to_integer();
-            mat[i + na][j] = val;
+            basis_b[i][j] = val;
         }
     }
-    let hnf = hnf::hnf(&mat);
+    let hnf = HNF::union(&HNF(basis_a), &HNF(basis_b));
     let n = hnf.0[0].len();
     let mut neword = vec![vec![BigRational::zero(); m]; n];
     #[allow(clippy::needless_range_loop)]

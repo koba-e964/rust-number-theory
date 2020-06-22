@@ -13,6 +13,27 @@ use std::fmt::Display;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HNF(pub Vec<Vec<BigInt>>);
 
+impl HNF {
+    /// Construct the sum module of the given two modules. The resulting module is returned as an HNF.
+    pub fn union(a: &HNF, b: &HNF) -> HNF {
+        assert_eq!(a.0[0].len(), b.0[0].len());
+        let na = a.0.len();
+        let nb = b.0.len();
+        let m = a.0[0].len();
+        // Concatenate and find HNF.
+        let mut mat = vec![vec![BigInt::zero(); m]; na + nb];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..na {
+            mat[i].clone_from_slice(&a.0[i]);
+        }
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..nb {
+            mat[i + na].clone_from_slice(&b.0[i]);
+        }
+        hnf(&mat)
+    }
+}
+
 impl Display for HNF {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         let &HNF(inner) = &self;
