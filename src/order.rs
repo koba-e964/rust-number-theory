@@ -103,28 +103,28 @@ pub fn union(a: &Order, b: &Order) -> Order {
             lcm = num::integer::lcm(lcm, den.clone());
         }
     }
-    let mut mat = vec![vec![BigInt::zero(); na + nb]; m];
+    let mut mat = vec![vec![BigInt::zero(); m]; na + nb];
     #[allow(clippy::needless_range_loop)]
-    for j in 0..na {
-        for i in 0..m {
+    for i in 0..na {
+        for j in 0..m {
             let val = (&a.basis[i][j] * &lcm).to_integer();
-            mat[j][i] = val;
+            mat[i][j] = val;
         }
     }
     #[allow(clippy::needless_range_loop)]
-    for j in 0..nb {
-        for i in 0..m {
+    for i in 0..nb {
+        for j in 0..m {
             let val = (&b.basis[i][j] * &lcm).to_integer();
-            mat[j][i + na] = val;
+            mat[i + na][j] = val;
         }
     }
     let hnf = hnf::hnf(&mat);
     let n = hnf.0[0].len();
     let mut neword = vec![vec![BigRational::zero(); m]; n];
-    for i in 0..m {
-        #[allow(clippy::needless_range_loop)]
-        for j in 0..n {
-            neword[j][i] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..n {
+        for j in 0..m {
+            neword[i][j] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());
         }
     }
     Order { basis: neword }
