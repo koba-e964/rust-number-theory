@@ -17,6 +17,7 @@ impl Order {
     pub fn deg(&self) -> usize {
         self.basis.len()
     }
+
     pub fn discriminant(&self, theta: &Algebraic) -> BigInt {
         let deg = theta.min_poly.deg();
         let det = determinant(&self.basis);
@@ -26,6 +27,19 @@ impl Order {
         let value = value / BigRational::from_integer(lc.pow(2 * (deg - 1)));
         assert!(value.is_integer());
         value.to_integer()
+    }
+
+    /// Returns Z[theta].
+    pub fn singly_gen(theta: &Algebraic) -> Self {
+        let deg = theta.deg();
+        let min_poly = &theta.min_poly;
+        let mut basis = vec![vec![BigRational::zero(); deg]; deg];
+        let mut cur = Algebraic::new_const(min_poly.clone(), BigRational::one());
+        for row in basis.iter_mut() {
+            row[..cur.expr.dat.len()].clone_from_slice(&cur.expr.dat);
+            cur = &cur * theta;
+        }
+        Order { basis }
     }
 }
 
@@ -179,17 +193,20 @@ mod tests2 {
     use algebraic::Algebraic;
     use polynomial::Polynomial;
 
-    /// Returns a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
-    fn theta() -> Algebraic {
-        let p = Polynomial::from_raw(vec![
+    fn min_poly() -> Polynomial<BigInt> {
+        Polynomial::from_raw(vec![
             5.into(),
             6.into(),
             (-7).into(),
             6.into(),
             (-7).into(),
             6.into(),
-        ]);
-        Algebraic::new(p)
+        ])
+    }
+
+    /// Returns a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
+    fn theta() -> Algebraic {
+        Algebraic::new(min_poly())
     }
 
     /// Let theta be a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
@@ -234,5 +251,12 @@ mod tests2 {
     #[test]
     fn discriminant_works() {
         assert_eq!(o().discriminant(&theta()), 9851980752i64.into());
+    }
+    #[test]
+    fn singly_gen_works() {
+        let obig = Order::singly_gen(&(&theta() * &Algebraic::from_int(min_poly(), 6)));
+        let o = non_monic_initial_order(&theta());
+        eprintln!("D(Obig) = {}", obig.discriminant(&theta()));
+        assert_eq!(index(&o, &obig), BigInt::from(6).pow(6u32));
     }
 }

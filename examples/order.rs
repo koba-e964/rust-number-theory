@@ -42,7 +42,7 @@ fn main() {
         (-7).into(),
         6.into(),
     ]);
-    let theta = Algebraic::new(p);
+    let theta = Algebraic::new(p.clone());
     let o = non_monic_initial_order(&theta);
     let o1_old: Vec<_> = vec![
         vec![1, 0, 0, 0, 0],
@@ -76,4 +76,8 @@ fn main() {
 
     let disc = o.discriminant(&theta);
     eprintln!("D(O) = {}", disc);
+
+    let obig = Order::singly_gen(&(&theta * &Algebraic::from_int(p, 6)));
+    eprintln!("D(Obig) = {}", obig.discriminant(&theta));
+    eprintln!("(O : Obig) = {}", index(&o, &obig));
 }
