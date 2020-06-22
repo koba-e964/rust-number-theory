@@ -3,14 +3,17 @@ extern crate rust_number_theory;
 
 use num::BigInt;
 
-use rust_number_theory::hnf;
+use rust_number_theory::hnf::HNF;
 
 fn main() {
     // 3 1
     // 1 1
     let a: Vec<Vec<BigInt>> = vec![vec![3.into(), 1.into()], vec![1.into(), 1.into()]];
-    let hnf = hnf::hnf(&a);
+    let hnf = HNF::hnf(&a);
+    let kern = HNF::kernel(&a);
+    let kern = HNF::hnf(&kern);
     eprintln!("hnf =\n{}", hnf);
+    eprintln!("kernel =\n{}", kern);
 
     // 0 0
     // 3 1
@@ -20,8 +23,11 @@ fn main() {
         vec![3.into(), 1.into()],
         vec![1.into(), 1.into()],
     ];
-    let hnf = hnf::hnf(&a);
+    let hnf = HNF::hnf(&a);
+    let kern = HNF::kernel(&a);
+    let kern = HNF::hnf(&kern);
     eprintln!("hnf =\n{}", hnf);
+    eprintln!("kernel =\n{}", kern);
 
     // 1 0
     // 3 1
@@ -31,6 +37,23 @@ fn main() {
         vec![3.into(), 1.into()],
         vec![1.into(), 1.into()],
     ];
-    let hnf = hnf::hnf(&a);
+    let hnf = HNF::hnf(&a);
+    let kern = HNF::kernel(&a);
+    let kern = HNF::hnf(&kern);
     eprintln!("hnf =\n{}", hnf);
+    eprintln!("kernel =\n{}", kern);
+
+    // 5 0
+    // 7 0
+    // 2 0
+    let a: Vec<Vec<BigInt>> = vec![
+        vec![5.into(), 0.into()],
+        vec![7.into(), 0.into()],
+        vec![2.into(), 0.into()],
+    ];
+    let hnf = HNF::hnf(&a);
+    let kern = HNF::kernel(&a);
+    let kern = HNF::hnf(&kern);
+    eprintln!("hnf =\n{}", hnf);
+    eprintln!("kernel =\n{}", kern);
 }

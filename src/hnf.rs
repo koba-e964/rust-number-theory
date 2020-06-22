@@ -1,5 +1,5 @@
 //! Computes the Hermite normal form (HNF) of a given matrix.
-use num::{BigInt, Signed, Zero};
+use num::{BigInt, One, Signed, Zero};
 use std::cmp::{max, min};
 use std::fmt::Display;
 
@@ -30,13 +30,29 @@ impl HNF {
         for i in 0..nb {
             mat[i + na].clone_from_slice(&b.0[i]);
         }
-        hnf(&mat)
+        HNF::hnf(&mat)
+    }
+    /// Algorithm 2.4.4 in [Cohen]
+    /// Computes the HNF of a given matrix.
+    ///
+    /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+    pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
+        hnf_with_u(a).0
+    }
+
+    /// Returns a collection of row vectors u s.t. uA = 0.
+    /// Returned elements are guaranteed to be linearly independent.
+    pub fn kernel(a: &[Vec<BigInt>]) -> Vec<Vec<BigInt>> {
+        hnf_with_u(a).1
     }
 }
 
 impl Display for HNF {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         let &HNF(inner) = &self;
+        if inner.is_empty() {
+            return write!(f, "()");
+        }
         let n = inner[0].len();
         for row in inner {
             #[allow(clippy::needless_range_loop)]
@@ -49,11 +65,14 @@ impl Display for HNF {
 }
 
 /// Algorithm 2.4.4 in [Cohen]
-/// Computes the HNF of a given matrix.
+/// Given a n * m matrix A, Computes the HNF B of A and an n * n matrix U s.t. B = UA.
 ///
 /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 #[allow(clippy::many_single_char_names)]
-pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
+fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
+    if a.is_empty() {
+        return (HNF(vec![]), vec![]);
+    }
     let mut a = a.to_vec();
     // Step 1: Initialize
     let n = a.len(); // #rows
@@ -61,6 +80,11 @@ pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
     let zero = BigInt::zero();
     let mut k = n - 1;
     let l = max(m, n) - n;
+    let mut u = vec![vec![zero.clone(); n]; n];
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..n {
+        u[i][i] = BigInt::one();
+    }
     for i in (l..m).rev() {
         loop {
             // Step 2: Row finished?
@@ -68,7 +92,11 @@ pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
             if allzero {
                 if a[k][i] < BigInt::zero() {
                     // A_k = -A_k
+                    // U_k = -U_k
                     for entry in a[k].iter_mut() {
+                        *entry *= -1;
+                    }
+                    for entry in u[k].iter_mut() {
                         *entry *= -1;
                     }
                 }
@@ -85,16 +113,23 @@ pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
                 }
                 let j0 = mi.1;
                 a.swap(j0, k);
+                u.swap(j0, k);
                 // Step 4: Reduce
                 let b = a[k][i].clone();
                 assert_ne!(b, zero);
                 for j in 0..k {
                     let q = floor_div(&a[j][i], &b);
                     // A_j -= q * A_k
+                    // U_j -= q * U_k
                     #[allow(clippy::needless_range_loop)]
-                    for u in 0..m {
-                        let val = &a[k][u] * &q;
-                        a[j][u] -= val;
+                    for v in 0..m {
+                        let val = &a[k][v] * &q;
+                        a[j][v] -= val;
+                    }
+                    #[allow(clippy::needless_range_loop)]
+                    for v in 0..n {
+                        let val = &u[k][v] * &q;
+                        u[j][v] -= val;
                     }
                 }
             }
@@ -107,10 +142,16 @@ pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
             for j in k + 1..n {
                 let q = floor_div(&a[j][i], &b);
                 // A_j -= q * A_k
+                // U_j -= q * U_k
                 #[allow(clippy::needless_range_loop)]
-                for u in 0..m {
-                    let val = &a[k][u] * &q;
-                    a[j][u] -= val;
+                for v in 0..m {
+                    let val = &a[k][v] * &q;
+                    a[j][v] -= val;
+                }
+                #[allow(clippy::needless_range_loop)]
+                for v in 0..n {
+                    let val = &u[k][v] * &q;
+                    u[j][v] -= val;
                 }
             }
         }
@@ -122,7 +163,8 @@ pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
     }
     // Step 6: Finished?
     let w = a[k..].to_vec();
-    HNF(w)
+    let u = u[..k].to_vec();
+    (HNF(w), u)
 }
 
 /// Computes floor(a / b).
@@ -142,7 +184,7 @@ mod tests {
         // 3 1
         // 1 1
         let a: Vec<Vec<BigInt>> = vec![vec![3.into(), 1.into()], vec![1.into(), 1.into()]];
-        let hnf = hnf(&a);
+        let hnf = HNF::hnf(&a);
         assert_eq!(
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
@@ -159,10 +201,33 @@ mod tests {
             vec![3.into(), 1.into()],
             vec![1.into(), 1.into()],
         ];
-        let hnf = hnf(&a);
+        let hnf = HNF::hnf(&a);
         assert_eq!(
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
         );
+    }
+
+    #[test]
+    fn kernel_works() {
+        // 5 0
+        // 7 0
+        // 2 0
+        let a: Vec<Vec<BigInt>> = vec![
+            vec![5.into(), 0.into()],
+            vec![7.into(), 0.into()],
+            vec![2.into(), 0.into()],
+        ];
+        let kern = HNF::kernel(&a);
+        let kern = HNF::hnf(&kern);
+        // ker A is a 2-dimensional Z-module, spanned by e.g. {(-1 1 -1), (2 0 -5)}.
+        // Whatever its "reduction" is, it has two rows, each of which A annihilates.
+        assert_eq!(kern.0.len(), 2);
+        for i in 0..2 {
+            assert_eq!(
+                &kern.0[i][0] * 5 + &kern.0[i][1] * 7 + &kern.0[i][2] * 2,
+                0.into(),
+            );
+        }
     }
 }
