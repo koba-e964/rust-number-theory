@@ -4,7 +4,7 @@ use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Algebraic {
-    min_poly: Polynomial<BigInt>,
+    pub min_poly: Polynomial<BigInt>,
     expr: Polynomial<BigRational>,
 }
 

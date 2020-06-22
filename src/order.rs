@@ -19,10 +19,20 @@ impl Order {
 
 /// For an order a and its suborder b, computes (a : b).
 pub fn index(a: &Order, b: &Order) -> BigInt {
-    (determinant(&b.basis) / determinant(&a.basis)).to_integer()
+    let quot = determinant(&b.basis) / determinant(&a.basis);
+    if !quot.is_integer() {
+        panic!(
+            "Error: quot is not an integer: {} = {} / {}",
+            quot,
+            determinant(&b.basis),
+            determinant(&a.basis),
+        );
+    }
+    quot.to_integer()
 }
 
-pub fn trivial_order(theta: &Algebraic) -> Order {
+/// theta's minimal polynomial should be monic.
+pub fn trivial_order_monic(theta: &Algebraic) -> Order {
     let deg = theta.deg();
     let mut basis = vec![vec![BigRational::zero(); deg]; deg];
     #[allow(clippy::needless_range_loop)]
@@ -32,8 +42,21 @@ pub fn trivial_order(theta: &Algebraic) -> Order {
     Order { basis }
 }
 
+/// Returns Z[theta] \cap Z[1 / theta].
+pub fn non_monic_initial_order(theta: &Algebraic) -> Order {
+    let deg = theta.deg();
+    let mut basis = vec![vec![BigRational::zero(); deg]; deg];
+    basis[0][0] = BigRational::one();
+    #[allow(clippy::needless_range_loop)]
+    for i in 1..deg {
+        for j in 1..i + 1 {
+            basis[i][j] = BigRational::from_integer(theta.min_poly.coef_at(deg - (i - j)));
+        }
+    }
+    Order { basis }
+}
+
 /// Creates the minimum order that contains both a and b.
-/// TODO
 pub fn union(a: &Order, b: &Order) -> Order {
     assert_eq!(a.basis[0].len(), b.basis[0].len());
     let m = a.basis[0].len();
@@ -90,7 +113,7 @@ mod tests1 {
     /// For x = 1 + 6i, returns Z[6i] = Z[x].
     fn o() -> Order {
         let theta = Algebraic::new(Polynomial::from_raw(vec![37.into(), (-2).into(), 1.into()]));
-        trivial_order(&theta)
+        trivial_order_monic(&theta)
     }
     /// For x = 1 + 6i, returns Z[3i] = Z[(1 + x) / 2].
     fn o1() -> Order {
@@ -129,26 +152,21 @@ mod tests1 {
 #[cfg(test)]
 mod tests2 {
     use super::*;
+    use algebraic::Algebraic;
+    use polynomial::Polynomial;
 
     /// Let theta be a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
-    /// Returns Z[6 theta, 5 / theta].
+    /// Returns Z[theta] \cap Z[1 / theta].
     fn o() -> Order {
-        Order {
-            basis: vec![
-                vec![1, 0, 0, 0, 0],
-                vec![0, 6, 0, 0, 0],
-                vec![0, 5, 6, 0, 0],
-                vec![0, 4, 5, 6, 0],
-                vec![0, 3, 4, 5, 6],
-            ]
-            .into_iter()
-            .map(|row| {
-                row.into_iter()
-                    .map(|x| BigRational::new(x.into(), 1.into()))
-                    .collect()
-            })
-            .collect(),
-        }
+        let p = Polynomial::from_raw(vec![
+            5.into(),
+            6.into(),
+            (-7).into(),
+            6.into(),
+            (-7).into(),
+            6.into(),
+        ]);
+        non_monic_initial_order(&Algebraic::new(p))
     }
     fn o1() -> Order {
         let o2_old: Vec<_> = vec![

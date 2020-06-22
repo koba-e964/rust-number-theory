@@ -40,6 +40,16 @@ impl<R: Zero> Polynomial<R> {
     }
 }
 
+impl<R: Zero + Clone> Polynomial<R> {
+    /// Get the coefficient of x^index in the polynomial.
+    pub fn coef_at(&self, index: usize) -> R {
+        if index < self.dat.len() {
+            return self.dat[index].clone();
+        }
+        R::zero()
+    }
+}
+
 impl Polynomial<BigInt> {
     pub fn differential(&self) -> Polynomial<BigInt> {
         if self.is_zero_primitive() {

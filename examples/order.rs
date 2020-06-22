@@ -4,7 +4,9 @@ extern crate rust_number_theory;
 use num::{BigInt, BigRational, One, Zero};
 
 use rust_number_theory::algebraic::Algebraic;
-use rust_number_theory::order::{index, trivial_order, union, Order};
+use rust_number_theory::order::{
+    index, non_monic_initial_order, trivial_order_monic, union, Order,
+};
 use rust_number_theory::polynomial::Polynomial;
 
 fn main() {
@@ -14,7 +16,7 @@ fn main() {
     let inv3 = BigRational::new(1.into(), 3.into());
     // (x-1)^2 + 36, the minimum polynomial of 1 + 6i
     let theta = Algebraic::new(Polynomial::from_raw(vec![37.into(), (-2).into(), 1.into()]));
-    let o = trivial_order(&theta);
+    let o = trivial_order_monic(&theta);
     let o1 = Order {
         basis: vec![
             vec![BigRational::one(), BigRational::zero()],
@@ -32,22 +34,15 @@ fn main() {
     let union = union(&o1, &o2);
     eprintln!("(O1 + O2: Z[x]) = {}", index(&union, &o));
 
-    let o = Order {
-        basis: vec![
-            vec![1, 0, 0, 0, 0],
-            vec![0, 6, 0, 0, 0],
-            vec![0, 5, 6, 0, 0],
-            vec![0, 4, 5, 6, 0],
-            vec![0, 3, 4, 5, 6],
-        ]
-        .into_iter()
-        .map(|row| {
-            row.into_iter()
-                .map(|x| BigRational::new(x.into(), 1.into()))
-                .collect()
-        })
-        .collect(),
-    };
+    let p = Polynomial::from_raw(vec![
+        5.into(),
+        6.into(),
+        (-7).into(),
+        6.into(),
+        (-7).into(),
+        6.into(),
+    ]);
+    let o = non_monic_initial_order(&Algebraic::new(p));
     let o1_old: Vec<_> = vec![
         vec![1, 0, 0, 0, 0],
         vec![0, 6, 0, 0, 0],
