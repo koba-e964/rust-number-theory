@@ -42,7 +42,8 @@ fn main() {
         (-7).into(),
         6.into(),
     ]);
-    let o = non_monic_initial_order(&Algebraic::new(p));
+    let theta = Algebraic::new(p);
+    let o = non_monic_initial_order(&theta);
     let o1_old: Vec<_> = vec![
         vec![1, 0, 0, 0, 0],
         vec![0, 6, 0, 0, 0],
@@ -72,4 +73,7 @@ fn main() {
         },
     };
     eprintln!("(O1 : O) = {}", index(&o1, &o));
+
+    let disc = o.discriminant(&theta);
+    eprintln!("D(O) = {}", disc);
 }

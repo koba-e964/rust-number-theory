@@ -1,7 +1,9 @@
+use num::traits::Pow;
 use num::{BigInt, BigRational, One, Zero};
 
 use algebraic::Algebraic;
 use determinant::determinant;
+use discriminant::discriminant;
 use hnf;
 
 /// Order. Constructed from n vectors independent over Q.
@@ -14,6 +16,16 @@ impl Order {
     /// Returns an order's degree.
     pub fn deg(&self) -> usize {
         self.basis.len()
+    }
+    pub fn discriminant(&self, theta: &Algebraic) -> BigInt {
+        let deg = theta.min_poly.deg();
+        let det = determinant(&self.basis);
+        let disc = discriminant(&theta.min_poly);
+        let lc = theta.min_poly.coef_at(deg);
+        let value = BigRational::from_integer(disc) * &det * &det;
+        let value = value / BigRational::from_integer(lc.pow(2 * (deg - 1)));
+        assert!(value.is_integer());
+        value.to_integer()
     }
 }
 
@@ -110,10 +122,14 @@ mod tests1 {
     use algebraic::Algebraic;
     use polynomial::Polynomial;
 
+    /// Returns 1 + 6i.
+    fn theta() -> Algebraic {
+        Algebraic::new(Polynomial::from_raw(vec![37.into(), (-2).into(), 1.into()]))
+    }
+
     /// For x = 1 + 6i, returns Z[6i] = Z[x].
     fn o() -> Order {
-        let theta = Algebraic::new(Polynomial::from_raw(vec![37.into(), (-2).into(), 1.into()]));
-        trivial_order_monic(&theta)
+        trivial_order_monic(&theta())
     }
     /// For x = 1 + 6i, returns Z[3i] = Z[(1 + x) / 2].
     fn o1() -> Order {
@@ -147,6 +163,14 @@ mod tests1 {
         let union = union(&o1(), &o2());
         assert_eq!(index(&union, &o()), 6.into());
     }
+
+    #[test]
+    fn discriminant_works() {
+        assert_eq!(o().discriminant(&theta()), (-144i64).into());
+        assert_eq!(o1().discriminant(&theta()), (-36i64).into());
+        assert_eq!(o2().discriminant(&theta()), (-16i64).into());
+        assert_eq!(union(&o1(), &o2()).discriminant(&theta()), (-4i64).into());
+    }
 }
 
 #[cfg(test)]
@@ -155,9 +179,8 @@ mod tests2 {
     use algebraic::Algebraic;
     use polynomial::Polynomial;
 
-    /// Let theta be a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
-    /// Returns Z[theta] \cap Z[1 / theta].
-    fn o() -> Order {
+    /// Returns a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
+    fn theta() -> Algebraic {
         let p = Polynomial::from_raw(vec![
             5.into(),
             6.into(),
@@ -166,7 +189,13 @@ mod tests2 {
             (-7).into(),
             6.into(),
         ]);
-        non_monic_initial_order(&Algebraic::new(p))
+        Algebraic::new(p)
+    }
+
+    /// Let theta be a root of f(x) := 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
+    /// Returns Z[theta] \cap Z[1 / theta].
+    fn o() -> Order {
+        non_monic_initial_order(&theta())
     }
     fn o1() -> Order {
         let o2_old: Vec<_> = vec![
@@ -201,5 +230,9 @@ mod tests2 {
     #[test]
     fn index_works() {
         assert_eq!(index(&o1(), &o()), 4.into());
+    }
+    #[test]
+    fn discriminant_works() {
+        assert_eq!(o().discriminant(&theta()), 9851980752i64.into());
     }
 }
