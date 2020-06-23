@@ -27,7 +27,7 @@ fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
         }
         v += 1;
     }
-    if v > BigInt::one() {
+    if x > BigInt::one() {
         ans.push((x, 1));
     }
     ans
@@ -77,7 +77,6 @@ fn find_integral_basis(theta: &Algebraic) {
                 let val = create_num(&o.basis[i], &theta);
                 phiw.push(power(&val, &pow));
             }
-            eprintln!("phiw = {:?}", phiw);
             let mut lcm = BigInt::one();
             for i in 0..deg {
                 for j in 0..deg {
@@ -85,7 +84,6 @@ fn find_integral_basis(theta: &Algebraic) {
                     lcm = num::integer::lcm(lcm, val);
                 }
             }
-            eprintln!("lcm = {}", lcm);
             // I_p + pO
             let mut basis = vec![vec![BigInt::from(0); deg]; 2 * deg];
             for i in 0..deg {
@@ -100,13 +98,11 @@ fn find_integral_basis(theta: &Algebraic) {
                     basis[i + deg][j] = &val * p;
                 }
             }
-            eprintln!("basis = {}", HNF(basis.clone()));
             // I_p in terms of O's basis
             let mut hnf = HNF::hnf(&HNF::kernel(&basis));
             for row in hnf.0.iter_mut() {
                 row.truncate(deg);
             }
-            eprintln!("hnf (I_p) = {}", hnf);
             // transformation: I_p in terms of Q(theta) * lcm
             let i_p_len = hnf.0.len();
             let mut i_p = vec![vec![BigInt::zero(); deg]; i_p_len];
@@ -120,7 +116,6 @@ fn find_integral_basis(theta: &Algebraic) {
 
             // U_p
             let mut u_p = HNF::hnf(&i_p);
-            eprintln!("init U_p = {}", u_p);
 
             for i in 0..i_p_len {
                 let ei = create_num_int(&i_p[i], &theta);
@@ -153,13 +148,9 @@ fn find_integral_basis(theta: &Algebraic) {
                     }
                 }
                 let new_u_p = HNF::hnf(&tmp_basis);
-                eprintln!("new U_p = {}", new_u_p);
                 u_p = new_u_p;
             }
 
-            eprintln!("hnf (U_p) = {}", u_p);
-
-            eprintln!("U_p = {}", u_p);
             assert!(u_p.0.len() <= deg);
             // U_p
             let mut new_o_basis = vec![vec![BigInt::zero(); deg]; u_p.0.len() + deg];
@@ -172,7 +163,6 @@ fn find_integral_basis(theta: &Algebraic) {
                 }
             }
             let u_p = HNF::hnf(&new_o_basis);
-            eprintln!("U_p = {}", u_p);
             assert_eq!(u_p.0.len(), deg);
 
             let mut new_o_basis = vec![vec![BigRational::zero(); deg]; deg];
@@ -198,6 +188,7 @@ fn find_integral_basis(theta: &Algebraic) {
             }
         }
     }
+    eprintln!("D(Z_K) = {}", o.discriminant(&theta));
 }
 
 fn create_num(a: &[BigRational], theta: &Algebraic) -> Algebraic {
