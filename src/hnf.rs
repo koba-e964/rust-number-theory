@@ -169,6 +169,9 @@ fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
 
 /// Computes floor(a / b).
 fn floor_div(a: &BigInt, b: &BigInt) -> BigInt {
+    if b < &BigInt::zero() {
+        return floor_div(&(-a), &(-b));
+    }
     let mut q = a / b;
     if a < &(&q * b) {
         q -= 1;
@@ -206,6 +209,22 @@ mod tests {
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
         );
+    }
+
+    #[test]
+    fn hnf_terminates() {
+        // 1516
+        // -154
+        // -336
+        // -1423
+        let a: Vec<Vec<BigInt>> = vec![
+            vec![1516.into()],
+            vec![(-154).into()],
+            vec![(-336).into()],
+            vec![(-1423).into()],
+        ];
+        let hnf = HNF::hnf(&a);
+        assert_eq!(hnf.0.len(), 1);
     }
 
     #[test]

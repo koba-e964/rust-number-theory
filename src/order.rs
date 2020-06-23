@@ -1,5 +1,6 @@
 use num::traits::Pow;
 use num::{BigInt, BigRational, One, Zero};
+use std::fmt::Display;
 
 use algebraic::Algebraic;
 use determinant::determinant;
@@ -40,6 +41,23 @@ impl Order {
             cur = &cur * theta;
         }
         Order { basis }
+    }
+}
+
+impl Display for Order {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let &Order { basis } = &self;
+        if basis.is_empty() {
+            return write!(f, "()");
+        }
+        let n = basis[0].len();
+        for row in basis {
+            #[allow(clippy::needless_range_loop)]
+            for j in 0..n {
+                write!(f, "{}{}", row[j], if j + 1 == n { "\n" } else { " " })?;
+            }
+        }
+        Ok(())
     }
 }
 

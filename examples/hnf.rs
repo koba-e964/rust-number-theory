@@ -56,4 +56,20 @@ fn main() {
     let kern = HNF::hnf(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
+
+    // 1516
+    // -154
+    // -336
+    // -1423
+    let a: Vec<Vec<BigInt>> = vec![
+        vec![1516.into()],
+        vec![(-154).into()],
+        vec![(-336).into()],
+        vec![(-1423).into()],
+    ];
+    let hnf = HNF::hnf(&a);
+    let kern = HNF::kernel(&a);
+    let kern = HNF::hnf(&kern);
+    eprintln!("hnf =\n{}", hnf);
+    eprintln!("kernel =\n{}", kern);
 }
