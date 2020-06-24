@@ -7,7 +7,7 @@ use crate::round2;
 
 /// Finds an integral basis of Q(theta).
 pub fn find_integral_basis(theta: &Algebraic) -> Order {
-    let mut o = non_monic_initial_order(&theta);
+    let mut o = non_monic_initial_order(&theta).hnf_reduce();
     let disc = o.discriminant(&theta);
     let disc_fac = factorize::factorize(&disc.abs());
     for &(ref p, mut e) in &disc_fac {
@@ -118,7 +118,7 @@ mod tests {
         assert_eq!(order.discriminant(&theta), (-241864704).into());
     }
 
-    // Too slow. Takes around 4 sec in *release* build.
+    // Too slow. Takes around 6 sec in debug build.
     #[allow(unused)]
     fn find_integral_basis_works_seq8() {
         let p = Polynomial::from_raw(vec![
@@ -138,7 +138,7 @@ mod tests {
         assert_eq!(order.discriminant(&theta), 1180980000000u64.into());
     }
 
-    // Too slow. Needs optimization. Takes around 1 min in *release* build.
+    // Too slow. Needs optimization. Takes around 3s in *release* build.
     #[allow(unused)]
     fn find_integral_basis_works_seq10() {
         let p = Polynomial::from_raw(vec![

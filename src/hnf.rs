@@ -1,6 +1,6 @@
 //! Computes the Hermite normal form (HNF) of a given matrix.
 use num::{BigInt, One, Signed, Zero};
-use std::cmp::{max, min};
+use std::cmp::min;
 use std::fmt::Display;
 
 /// A matrix guaranteed to be in HNF.
@@ -55,6 +55,7 @@ impl Display for HNF {
         }
         let n = inner[0].len();
         for row in inner {
+            assert_eq!(row.len(), n);
             #[allow(clippy::needless_range_loop)]
             for j in 0..n {
                 write!(f, "{}{}", row[j], if j + 1 == n { "\n" } else { " " })?;
@@ -79,13 +80,12 @@ fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
     let m = a[0].len(); // #columns
     let zero = BigInt::zero();
     let mut k = n - 1;
-    let l = max(m, n) - n;
     let mut u = vec![vec![zero.clone(); n]; n];
     #[allow(clippy::needless_range_loop)]
     for i in 0..n {
         u[i][i] = BigInt::one();
     }
-    for i in (l..m).rev() {
+    for i in (0..m).rev() {
         loop {
             // Step 2: Row finished?
             let allzero = (0..k).all(|j| a[j][i] == BigInt::zero());
@@ -104,7 +104,7 @@ fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
             } else {
                 // Step 3: Choose non-zero entry
                 let ind = (0..k).position(|j| a[j][i] != zero).unwrap();
-                let mut mi = (a[ind][i].clone(), ind);
+                let mut mi = (a[ind][i].abs(), ind);
                 #[allow(clippy::needless_range_loop)]
                 for j in ind + 1..k + 1 {
                     if a[j][i] != zero {
@@ -156,7 +156,8 @@ fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
             }
         }
         // Step 6: Finished?
-        if i == l {
+        // Modified, because the condition i == l (:= max(m, n) - n) appears to be incorrect.
+        if k == 0 || i == 0 {
             break;
         }
         k -= 1;
@@ -195,7 +196,7 @@ mod tests {
     }
 
     #[test]
-    fn hnf_works_with_zero_columns() {
+    fn hnf_works_with_zero_rows() {
         // 0 0
         // 3 1
         // 1 1
@@ -208,6 +209,24 @@ mod tests {
         assert_eq!(
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
+        );
+    }
+
+    #[test]
+    fn hnf_works_with_zero_columns() {
+        // 2 0 1 0
+        // 1 1 0 0
+        let a: Vec<Vec<BigInt>> = vec![
+            vec![2.into(), 0.into(), 1.into(), 0.into()],
+            vec![1.into(), 1.into(), 0.into(), 0.into()],
+        ];
+        let hnf = HNF::hnf(&a);
+        assert_eq!(
+            hnf.0,
+            vec![
+                vec![1.into(), 1.into(), 0.into(), 0.into()],
+                vec![2.into(), 0.into(), 1.into(), 0.into()],
+            ]
         );
     }
 
