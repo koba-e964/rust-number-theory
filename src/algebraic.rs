@@ -1,4 +1,4 @@
-use num::{BigInt, BigRational, Zero};
+use num::{traits::Pow, BigInt, BigRational, One, Zero};
 use polynomial::Polynomial;
 use std::ops::{Add, Mul, Sub};
 
@@ -134,6 +134,38 @@ impl<'a> Mul for &'a Algebraic {
             min_poly: self.min_poly.clone(),
             expr: mul_with_mod(&self.expr, &other.expr, &self.min_poly),
         }
+    }
+}
+
+impl<'a> Pow<u64> for &'a Algebraic {
+    type Output = Algebraic;
+    fn pow(self, mut e: u64) -> Self::Output {
+        let mut cur = self.clone();
+        let mut prod = Algebraic::from_int(self.min_poly.clone(), 1);
+        while e > 0 {
+            if e % 2 == 1 {
+                prod = &prod * &cur;
+            }
+            cur = &cur * &cur;
+            e /= 2;
+        }
+        prod
+    }
+}
+
+impl<'a> Pow<BigInt> for &'a Algebraic {
+    type Output = Algebraic;
+    fn pow(self, mut e: BigInt) -> Self::Output {
+        let mut cur = self.clone();
+        let mut prod = Algebraic::from_int(self.min_poly.clone(), 1);
+        while e > BigInt::zero() {
+            if &e % 2 == BigInt::one() {
+                prod = &prod * &cur;
+            }
+            cur = &cur * &cur;
+            e /= 2;
+        }
+        prod
     }
 }
 

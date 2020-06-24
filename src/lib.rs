@@ -7,6 +7,8 @@ pub mod determinant;
 pub mod discriminant;
 pub mod factorize;
 pub mod hnf;
+pub mod integral_basis;
 pub mod order;
 pub mod polynomial;
 pub mod resultant;
+pub mod round2;

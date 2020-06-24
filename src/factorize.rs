@@ -2,7 +2,7 @@ extern crate num;
 
 use num::{BigInt, Zero};
 
-pub fn factorize(n: &BigInt) -> Vec<(BigInt, usize)> {
+pub fn factorize(n: &BigInt) -> Vec<(BigInt, u64)> {
     assert!(*n >= 1.into());
     // TODO naive
     let mut p: BigInt = 2.into();
