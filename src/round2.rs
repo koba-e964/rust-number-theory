@@ -129,7 +129,7 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
     }
     let new_o = Order { basis: new_o_basis };
     let mut index = index(&new_o, &o);
-    o = new_o;
+    o = new_o.hnf_reduce();
     let mut howmany = 0;
     while index > BigInt::one() {
         assert_eq!(&index % p, BigInt::zero());

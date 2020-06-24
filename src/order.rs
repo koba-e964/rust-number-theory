@@ -42,6 +42,32 @@ impl Order {
         }
         Order { basis }
     }
+
+    /// Reduce this order to HNF.
+    #[allow(clippy::needless_range_loop)]
+    pub fn hnf_reduce(&self) -> Order {
+        let mut lcm = BigInt::one();
+        let deg = self.basis.len();
+        for row in &self.basis {
+            for elem in row {
+                lcm = num::integer::lcm(lcm, elem.denom().clone());
+            }
+        }
+        let mut basis = vec![vec![BigInt::zero(); deg]; deg];
+        for i in 0..deg {
+            for j in 0..deg {
+                basis[i][j] = (&self.basis[i][j] * &lcm).to_integer();
+            }
+        }
+        let hnf = HNF::hnf(&basis);
+        let mut result = vec![vec![BigRational::zero(); deg]; deg];
+        for i in 0..deg {
+            for j in 0..deg {
+                result[i][j] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());
+            }
+        }
+        Order { basis: result }
+    }
 }
 
 impl Display for Order {

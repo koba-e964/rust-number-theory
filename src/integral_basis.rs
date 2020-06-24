@@ -7,7 +7,7 @@ use crate::round2;
 
 /// Finds an integral basis of Q(theta).
 pub fn find_integral_basis(theta: &Algebraic) -> Order {
-    let mut o = non_monic_initial_order(&theta);
+    let mut o = non_monic_initial_order(&theta).hnf_reduce();
     let disc = o.discriminant(&theta);
     let disc_fac = factorize::factorize(&disc.abs());
     for &(ref p, mut e) in &disc_fac {
