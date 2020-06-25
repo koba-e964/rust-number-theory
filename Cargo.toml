@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["koba-e964 <3303362+koba-e964@users.noreply.github.com>"]
 
 [dependencies]
-num = "0.2"
+num = { version = "0.3", features = ["rand"] }
+rand = "0.7"

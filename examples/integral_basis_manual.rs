@@ -3,7 +3,6 @@
 extern crate num;
 extern crate rust_number_theory;
 
-use num::traits::Pow;
 use num::{BigInt, BigRational, One, Signed, Zero};
 
 use rust_number_theory::algebraic::Algebraic;
