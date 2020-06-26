@@ -11,6 +11,9 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
     if x <= &BigInt::zero() {
         panic!("x <= 0: x = {}", x);
     }
+
+    let b = 1000u64; // TODO
+
     let mut stack = vec![x.clone()];
     let mut map = HashMap::new();
     while let Some(now) = stack.pop() {
@@ -21,7 +24,14 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
             *map.entry(now).or_insert(0) += 1;
             continue;
         }
-        let fac = ecm(&now);
+        let fac = ecm(
+            &now,
+            ECMConfig {
+                b1: b,
+                b2: 100 * b,
+                verbose: false,
+            },
+        );
         let other = &now / &fac;
         stack.push(now);
         stack.push(other);
@@ -31,15 +41,27 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
     result
 }
 
+/// Configuration for ECM.
+pub struct ECMConfig {
+    pub b1: u64,
+    pub b2: u64,
+    pub verbose: bool,
+}
+
 /// Finds a factor.
 #[allow(clippy::many_single_char_names)]
-fn ecm(n: &BigInt) -> BigInt {
+pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
     debug_assert!(!prime::is_prime(n));
-    let b = 1000u64; // TODO
 
     let mut rng = rand::thread_rng();
 
+    let mut count = 0u64;
+
     loop {
+        count += 1;
+        if conf.verbose {
+            eprintln!("Trying curve {}, B1 = {}, B2 = {}", count, conf.b1, conf.b2);
+        }
         // randomly pick a
         let a = rng.gen_bigint_range(&1.into(), n);
         let curve = Ell { a, n: n.clone() };
@@ -47,25 +69,36 @@ fn ecm(n: &BigInt) -> BigInt {
         // randomly select a point
         let x = rng.gen_bigint_range(&1.into(), n);
         let y = rng.gen_bigint_range(&1.into(), n);
-        let mut pt = Point {
+        let pt = Point {
             x,
             y,
             z: BigInt::one(),
         };
-        for k in 1..b + 1 {
-            let ans = pt.mul(k.into(), &curve);
-            match ans {
-                Ok(nxt) => pt = nxt,
-                Err(fac) => {
-                    if fac == BigInt::one() || &fac == n {
-                        break;
-                    }
-                    debug_assert_eq!(n % &fac, BigInt::zero());
-                    return fac;
-                }
+        if let Err(fac) = ecm_oneshot(pt, curve, conf.b1, conf.b2) {
+            if fac == BigInt::one() || &fac == n {
+                continue;
             }
+            debug_assert_eq!(n % &fac, BigInt::zero());
+            return fac;
         }
     }
+}
+
+fn ecm_oneshot(mut pt: Point<BigInt>, curve: Ell<BigInt>, b1: u64, b2: u64) -> Result<(), BigInt> {
+    for k in 1..b1 + 1 {
+        pt = pt.mul(k.into(), &curve)?;
+    }
+    // Step 2: try all primes in range (b1, b2]
+    let pt6 = pt.mul(6.into(), &curve)?;
+    for &init in &[b1.saturating_sub(1) / 6 * 6 + 1, (b1 + 1) / 6 * 6 - 1] {
+        let mut cur_e = init;
+        let mut cur = pt.mul(init.into(), &curve)?;
+        while cur_e <= b2 {
+            cur = cur.add(&pt6, &curve)?;
+            cur_e += 6;
+        }
+    }
+    Ok(())
 }
 
 /// Projective coordinates
@@ -305,7 +338,14 @@ mod tests {
     #[test]
     fn ecm_works_0() {
         let a = BigInt::from(133);
-        let factor = ecm(&a);
+        let factor = ecm(
+            &a,
+            ECMConfig {
+                b1: 1000,
+                b2: 100000,
+                verbose: false,
+            },
+        );
         assert_eq!(a % factor, BigInt::zero());
     }
     #[test]
@@ -313,7 +353,14 @@ mod tests {
         let large1 = BigInt::from(65_537u128);
         let large2 = BigInt::from(1_000_003u128);
         let a = large1 * large2;
-        let factor = ecm(&a);
+        let factor = ecm(
+            &a,
+            ECMConfig {
+                b1: 1000,
+                b2: 100000,
+                verbose: false,
+            },
+        );
         assert_eq!(a % factor, BigInt::zero());
     }
 
@@ -323,7 +370,14 @@ mod tests {
         let large1 = BigInt::from(1_000_000_007u128);
         let large2 = BigInt::from(1_000_000_009u128);
         let a = large1 * large2;
-        let factor = ecm(&a);
+        let factor = ecm(
+            &a,
+            ECMConfig {
+                b1: 1000,
+                b2: 100000,
+                verbose: false,
+            },
+        );
         eprintln!("factor={}", factor);
         assert_eq!(a % factor, BigInt::zero());
     }
