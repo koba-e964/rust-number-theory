@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use rust_number_theory::algebraic::Algebraic;
 use rust_number_theory::discriminant;
+use rust_number_theory::integral_basis;
+use rust_number_theory::order;
 use rust_number_theory::polynomial::Polynomial;
 use rust_number_theory::resultant::resultant;
 
@@ -71,7 +74,7 @@ fn main() {
             let res = resultant(&p, &q);
             let mut result = HashMap::new();
             result.insert("resultant", res.to_string());
-            println!("{}", serde_json::to_string(&result).unwrap());
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
         if to_find == "discriminant" {
             let polys = match input_config.input {
@@ -81,7 +84,21 @@ fn main() {
             let disc = discriminant::discriminant(&p);
             let mut result = HashMap::new();
             result.insert("discriminant", disc.to_string());
-            println!("{}", serde_json::to_string(&result).unwrap());
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
+        }
+        if to_find == "integral_basis" {
+            let polys = match input_config.input {
+                Input::Polynomials(ref polys) => polys.clone(),
+            };
+            let p = polynomial_unbridge(polys[0].clone());
+            let theta = Algebraic::new(p);
+            let o = integral_basis::find_integral_basis(&theta);
+            let index = order::index(&o, &order::non_monic_initial_order(&theta));
+            eprintln!("Z_K = {}", o);
+            let mut result = HashMap::new();
+            result.insert("reduced_index", index.to_string());
+            result.insert("discriminant", o.discriminant(&theta).to_string());
+            println!("{}", serde_json::to_string_pretty(&result).unwrap());
         }
     }
 }

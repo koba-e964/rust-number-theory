@@ -27,8 +27,10 @@ to_find:
 
 If you feed this file to the executable, the discriminant of 2x^3 + x^2 - 2x + 3 will be found.
 ```
-$ cargo run data/input-discriminant.yml 
+$ cargo run data/input-discriminant.yml
     Finished dev [unoptimized + debuginfo] target(s) in 0.37s
      Running `target/debug/rust-number-theory data/input-discriminant.yml`
-{"discriminant":"-1132"}
+{
+  "discriminant": "-1132"
+}
 ```

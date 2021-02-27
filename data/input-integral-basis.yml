@@ -1,0 +1,20 @@
+# Find the integral basis of Q(theta), where theta is a root of 6x^5 - 7x^4 + 6x^3 - 7x^2 + 6x + 5.
+# To feed this file to the executable, run `cargo run test/input-integral-basis.yml'.
+# The output should be the following:
+# {
+#   "reduced_index": "36",
+#   "discriminant": "7601837"
+# }
+input:
+  polynomials:
+    -
+      - '5'
+      - '6'
+      - '-7'
+      - '6'
+      - '-7'
+      - '6'
+
+to_find:
+  - 'integral_basis'
+
