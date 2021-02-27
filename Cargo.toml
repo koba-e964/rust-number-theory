@@ -5,7 +5,16 @@ authors = ["koba-e964 <3303362+koba-e964@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-num = { version = "0.3", features = ["rand"] }
 # This rand dependency must be 0.7 because num-bigint:0.3.1 depends on rand:0.7.
 # https://github.com/rust-num/num-bigint/blob/num-bigint-0.3.1/Cargo.toml#L50
 rand = "0.7"
+serde_json = "1"
+serde_yaml = "0.8"
+
+[dependencies.num]
+version = "0.3"
+features = ["rand", "serde"]
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]

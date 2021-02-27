@@ -1,11 +1,13 @@
 extern crate num;
 
 use num::{pow, BigInt, BigRational, One, Zero};
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::ops::{Add, AddAssign, Mul, Neg, Sub, SubAssign};
 
 // The leading coefficient (a[a.len() - 1]) must not be 0.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Polynomial<R> {
     pub dat: Vec<R>,
 }
