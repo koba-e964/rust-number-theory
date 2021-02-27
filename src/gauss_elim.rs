@@ -2,12 +2,15 @@ use num::rational::Ratio;
 use num::traits::NumAssign;
 use num::{Integer, Zero};
 
-/// If a is not invertible, this function returns Err(()).
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct MatrixNotInvertible;
+
+/// If a is not invertible, this function returns Err(MatrixNotInvertible).
 /// Complexity: O(n^3)
 pub fn gauss_elim<Int: Clone + Integer + NumAssign + std::fmt::Display>(
     a: &[Vec<Ratio<Int>>],
     b: &[Ratio<Int>],
-) -> Result<Vec<Ratio<Int>>, ()> {
+) -> Result<Vec<Ratio<Int>>, MatrixNotInvertible> {
     let mut a = a.to_vec();
     let mut b = b.to_vec();
     let n = a.len();
@@ -24,7 +27,7 @@ pub fn gauss_elim<Int: Clone + Integer + NumAssign + std::fmt::Display>(
             }
         }
         if nxt == n {
-            return Err(());
+            return Err(MatrixNotInvertible);
         }
         for row in a.iter_mut() {
             row.swap(col, nxt);
