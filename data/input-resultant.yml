@@ -1,5 +1,6 @@
 # Find the resultant of 9x^5 + 6x^4 + 2x^2 + 5 and 7x^4 + x^3 + 6x^2 + 6x + 6.
 # To feed this file to the executable, run `cargo run test/input-resultant.yml'.
+# The output should be {"resultant":"335159672"}.
 input:
   polynomials:
     -

@@ -1,24 +1,25 @@
 use num::BigInt;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use rust_number_theory::discriminant;
 use rust_number_theory::polynomial::Polynomial;
 use rust_number_theory::resultant::resultant;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct InputConfig {
     input: Input,
     to_find: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 enum Input {
     Polynomials(Vec<Vec<BigIntBridge>>),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(transparent)]
 struct BigIntBridge(String);
 
@@ -34,6 +35,7 @@ impl From<BigInt> for BigIntBridge {
     }
 }
 
+#[allow(unused)]
 fn polynomial_bridge(x: Polynomial<BigInt>) -> Vec<BigIntBridge> {
     let mut dat = vec![];
     for elem in x.dat {
@@ -51,32 +53,35 @@ fn polynomial_unbridge(x: Vec<BigIntBridge>) -> Polynomial<BigInt> {
 }
 
 fn main() {
-    // 9x^5 + 6x^4 + 2x^2 + 5
-    let p: Polynomial<BigInt> = Polynomial::from_raw(vec![
-        5.into(),
-        0.into(),
-        2.into(),
-        0.into(),
-        6.into(),
-        9.into(),
-    ]);
-    println!(
-        "{}",
-        serde_json::to_string(&polynomial_bridge(p.clone())).unwrap()
-    );
-    // 7x^4 + x^3 + 6x^2 + 6x + 6
-    let q: Polynomial<BigInt> =
-        Polynomial::from_raw(vec![6.into(), 6.into(), 6.into(), 1.into(), 7.into()]);
-    let res = resultant(&p, &q);
-    eprintln!("resultant = {}", res);
-    assert_eq!(res, 335159672.into());
-    // 2x^3 + x^2 - 2x + 3
-    let p: Polynomial<BigInt> =
-        Polynomial::from_raw(vec![3.into(), (-2).into(), 1.into(), 2.into()]);
-    eprintln!("det = {}", discriminant::discriminant(&p));
-
-    let filename = "data/input-resultant.yml";
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() <= 1 {
+        eprintln!("This executable needs a configuration file.");
+        std::process::exit(1);
+    }
+    let filename = args[1].clone();
     let file = std::fs::File::open(&filename).unwrap();
     let input_config: InputConfig = serde_yaml::from_reader(&file).unwrap();
-    eprintln!("input: {:?}", input_config);
+    for to_find in input_config.to_find {
+        if to_find == "resultant" {
+            let polys = match input_config.input {
+                Input::Polynomials(ref polys) => polys.clone(),
+            };
+            let p = polynomial_unbridge(polys[0].clone());
+            let q = polynomial_unbridge(polys[1].clone());
+            let res = resultant(&p, &q);
+            let mut result = HashMap::new();
+            result.insert("resultant", res.to_string());
+            println!("{}", serde_json::to_string(&result).unwrap());
+        }
+        if to_find == "discriminant" {
+            let polys = match input_config.input {
+                Input::Polynomials(ref polys) => polys.clone(),
+            };
+            let p = polynomial_unbridge(polys[0].clone());
+            let disc = discriminant::discriminant(&p);
+            let mut result = HashMap::new();
+            result.insert("discriminant", disc.to_string());
+            println!("{}", serde_json::to_string(&result).unwrap());
+        }
+    }
 }
