@@ -1,11 +1,11 @@
 extern crate num;
 
+use crate::polynomial::Polynomial;
 use num::{BigInt, Zero};
-use polynomial::Polynomial;
 
 pub fn discriminant(f: &Polynomial<BigInt>) -> BigInt {
     assert!(!f.is_zero());
-    let mut res = ::resultant::resultant(f, &f.differential());
+    let mut res = crate::resultant::resultant(f, &f.differential());
     let m = f.deg();
     if m % 4 == 2 || m % 4 == 3 {
         res = -res;
@@ -15,8 +15,8 @@ pub fn discriminant(f: &Polynomial<BigInt>) -> BigInt {
 #[cfg(test)]
 mod tests {
     use super::discriminant;
+    use crate::polynomial::Polynomial;
     use num::BigInt;
-    use polynomial::Polynomial;
     #[test]
     fn test_discriminant_linear() {
         // 1771x + 24

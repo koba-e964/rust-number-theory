@@ -2,10 +2,10 @@ use num::traits::Pow;
 use num::{BigInt, BigRational, One, Zero};
 use std::fmt::Display;
 
-use algebraic::Algebraic;
-use determinant::determinant;
-use discriminant::discriminant;
-use hnf::HNF;
+use crate::algebraic::Algebraic;
+use crate::determinant::determinant;
+use crate::discriminant::discriminant;
+use crate::hnf::HNF;
 
 /// Order. Constructed from n vectors independent over Q.
 #[derive(Clone, Debug)]
@@ -178,8 +178,8 @@ pub fn union(a: &Order, b: &Order) -> Order {
 #[cfg(test)]
 mod tests1 {
     use super::*;
-    use algebraic::Algebraic;
-    use polynomial::Polynomial;
+    use crate::algebraic::Algebraic;
+    use crate::polynomial::Polynomial;
 
     /// Returns 1 + 6i.
     fn theta() -> Algebraic {
@@ -235,8 +235,8 @@ mod tests1 {
 #[cfg(test)]
 mod tests2 {
     use super::*;
-    use algebraic::Algebraic;
-    use polynomial::Polynomial;
+    use crate::algebraic::Algebraic;
+    use crate::polynomial::Polynomial;
 
     fn min_poly() -> Polynomial<BigInt> {
         Polynomial::from_raw(vec![

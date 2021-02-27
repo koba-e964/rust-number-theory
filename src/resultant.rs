@@ -1,7 +1,7 @@
 extern crate num;
 
+use crate::polynomial::{div_rem_bigrational, pseudo_div_rem_bigint, Polynomial};
 use num::{pow, BigInt, BigRational, One, Zero};
-use polynomial::{div_rem_bigrational, pseudo_div_rem_bigint, Polynomial};
 
 /// Using naive arithmetic
 pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>) -> BigRational {
@@ -82,8 +82,8 @@ pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> BigInt {
 #[cfg(test)]
 mod tests {
     use super::resultant;
+    use crate::polynomial::Polynomial;
     use num::BigInt;
-    use polynomial::Polynomial;
     #[test]
     fn test_resultant() {
         // 9x^5 + 6x^4 + 2x^2 + 5

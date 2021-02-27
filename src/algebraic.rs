@@ -1,5 +1,5 @@
+use crate::polynomial::Polynomial;
 use num::{traits::Pow, BigInt, BigRational, One, Zero};
-use polynomial::Polynomial;
 use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -172,7 +172,7 @@ impl<'a> Pow<BigInt> for &'a Algebraic {
 #[cfg(test)]
 mod tests {
     use super::Algebraic;
-    use polynomial::Polynomial;
+    use crate::polynomial::Polynomial;
     #[test]
     fn test_alg_mul() {
         // Let theta be an algebraic number whose minimal polynomial is x^3 + x + 1.
