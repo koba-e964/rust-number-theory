@@ -1,5 +1,5 @@
 use num::bigint::RandBigInt;
-use num::{BigInt, One, Zero};
+use num::{BigInt, One};
 
 #[allow(clippy::many_single_char_names)]
 pub fn is_prime(n: &BigInt) -> bool {
@@ -10,15 +10,16 @@ pub fn is_prime(n: &BigInt) -> bool {
     if n == &two {
         return true;
     }
-    if n % &two == BigInt::zero() {
+    // if n % 2 == 0
+    if !n.bit(0) {
         return false;
     }
 
     let mut c = 0u64;
-    let mut d = n - 1;
+    let mut d: BigInt = n - 1;
 
-    while &d % 2 == BigInt::zero() {
-        d /= 2;
+    while !d.bit(0) {
+        d >>= 1;
         c += 1;
     }
 
