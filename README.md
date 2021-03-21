@@ -1,4 +1,4 @@
-# rust-number-theory [![Build Status](https://travis-ci.com/koba-e964/rust-number-theory.svg?branch=master)](https://travis-ci.com/koba-e964/rust-number-theory)
+# rust-number-theory [![Rust](https://github.com/koba-e964/rust-number-theory/actions/workflows/rust.yml/badge.svg)](https://github.com/koba-e964/rust-number-theory/actions/workflows/rust.yml)
 Rust implementation of algorithms in number theory.
 Implemented algorithms include:
 
