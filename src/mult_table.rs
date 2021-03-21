@@ -1,7 +1,7 @@
 use num::BigInt;
 
 /// Multiplication table of a ring of integers (or orders).
-struct MultTable {
+pub struct MultTable {
     table: Vec<Vec<Vec<BigInt>>>,
 }
 
@@ -12,6 +12,7 @@ impl MultTable {
     pub fn deg(&self) -> usize {
         self.table.len()
     }
+    #[allow(clippy::needless_range_loop)]
     pub fn mul(&self, a: &[BigInt], b: &[BigInt]) -> Vec<BigInt> {
         debug_assert_eq!(a.len(), b.len());
         let n = a.len();

@@ -5,7 +5,10 @@ use std::fmt::Display;
 use crate::algebraic::Algebraic;
 use crate::determinant::determinant;
 use crate::discriminant::discriminant;
+use crate::gauss_elim::gauss_elim;
 use crate::hnf::HNF;
+use crate::mult_table::MultTable;
+use crate::polynomial::Polynomial;
 
 /// Order. Constructed from n vectors independent over Q.
 #[derive(Clone, Debug)]
@@ -67,6 +70,39 @@ impl Order {
             }
         }
         Order { basis: result }
+    }
+
+    #[allow(clippy::needless_range_loop)]
+    pub fn get_mult_table(&self, theta: &Algebraic) -> MultTable {
+        let deg = self.deg();
+        let mut table = vec![vec![vec![BigInt::zero(); deg]; deg]; deg];
+        // This code snipped is copy-pasted from round2.
+        // TODO: unify
+        for i in 0..deg {
+            let oi = Self::create_num(&self.basis[i], &theta);
+            for j in 0..deg {
+                let oj = Self::create_num(&self.basis[j], &theta);
+                let prod = &oi * &oj;
+                let mut b = vec![BigRational::zero(); deg];
+                for k in 0..deg {
+                    b[k] = prod.expr.coef_at(k);
+                }
+                let inv = gauss_elim(&self.basis, &b).expect("O is not linearly independent");
+                for k in 0..deg {
+                    assert!(inv[k].is_integer());
+                    table[i][j][k] = inv[k].to_integer();
+                }
+            }
+        }
+        MultTable::new(table)
+    }
+    // This code snipped is copy-pasted from round2.
+    // TODO: unify
+    fn create_num(a: &[BigRational], theta: &Algebraic) -> Algebraic {
+        Algebraic {
+            min_poly: theta.min_poly.clone(),
+            expr: Polynomial::from_raw(a.to_vec()),
+        }
     }
 }
 
@@ -229,6 +265,15 @@ mod tests1 {
         assert_eq!(o1().discriminant(&theta()), (-36i64).into());
         assert_eq!(o2().discriminant(&theta()), (-16i64).into());
         assert_eq!(union(&o1(), &o2()).discriminant(&theta()), (-4i64).into());
+    }
+
+    #[test]
+    fn get_mult_table_works() {
+        let mult_table = o().get_mult_table(&theta());
+        assert_eq!(
+            mult_table.mul(&[1.into(), 1.into()], &[1.into(), 1.into()]),
+            vec![(-36).into(), 4.into()]
+        );
     }
 }
 
