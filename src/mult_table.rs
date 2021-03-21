@@ -1,6 +1,7 @@
 use num::BigInt;
 
 /// Multiplication table of a ring of integers (or orders).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MultTable {
     table: Vec<Vec<Vec<BigInt>>>,
 }

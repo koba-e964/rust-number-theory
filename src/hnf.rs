@@ -45,6 +45,19 @@ impl HNF {
     pub fn kernel(a: &[Vec<BigInt>]) -> Vec<Vec<BigInt>> {
         hnf_with_u(a).1
     }
+
+    pub fn as_vecs(&self) -> Vec<Vec<BigInt>> {
+        self.0.clone()
+    }
+
+    pub fn determinant(&self) -> BigInt {
+        let mut prod = BigInt::from(1);
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..self.0.len() {
+            prod *= &self.0[i][i];
+        }
+        prod
+    }
 }
 
 impl Display for HNF {

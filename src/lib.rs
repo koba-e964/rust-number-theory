@@ -7,6 +7,7 @@ pub mod ecm;
 pub mod factorize;
 pub mod gauss_elim;
 pub mod hnf;
+pub mod ideal;
 pub mod integral_basis;
 pub mod mult_table;
 pub mod order;

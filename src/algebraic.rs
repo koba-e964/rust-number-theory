@@ -19,6 +19,12 @@ impl Algebraic {
             ]),
         }
     }
+    pub fn with_expr(minimal_poly: Polynomial<BigInt>, expr: Polynomial<BigRational>) -> Self {
+        Algebraic {
+            min_poly: minimal_poly,
+            expr,
+        }
+    }
     pub fn new_const(minimal_poly: Polynomial<BigInt>, x: BigRational) -> Self {
         Algebraic {
             min_poly: minimal_poly,
@@ -35,6 +41,13 @@ impl Algebraic {
     /// Returns its minimal polynomial's degree.
     pub fn deg(&self) -> usize {
         self.min_poly.deg()
+    }
+
+    pub fn as_coefs(&self) -> Vec<BigRational> {
+        let mut expr = self.expr.clone().dat;
+        let deg = self.deg();
+        expr.extend_from_slice(&vec![BigRational::from_integer(0.into()); deg - expr.len()]);
+        expr
     }
 }
 
