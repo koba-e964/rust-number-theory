@@ -1,6 +1,6 @@
 use num::traits::Pow;
 use num::{BigInt, BigRational, One, Zero};
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::algebraic::Algebraic;
 use crate::determinant::determinant;
@@ -11,7 +11,7 @@ use crate::mult_table::MultTable;
 use crate::polynomial::Polynomial;
 
 /// Order. Constructed from n vectors independent over Q.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Order {
     pub basis: Vec<Vec<BigRational>>,
 }
@@ -120,6 +120,12 @@ impl Display for Order {
             }
         }
         Ok(())
+    }
+}
+
+impl Debug for Order {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self, f)
     }
 }
 
