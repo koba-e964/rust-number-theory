@@ -1,7 +1,7 @@
 use crate::algebraic::Algebraic;
-use crate::hnf::HNF;
 use crate::mult_table::MultTable;
 use num::{BigInt, BigRational, One, Zero};
+use number_theory_linear::hnf::HNF;
 use std::ops::{Add, Mul};
 
 /// An ideal represented by an HNF. Basis is of Z_K (the integral basis), not of K.
@@ -62,7 +62,7 @@ impl<'mul> Ideal<'mul> {
             }
         }
         let c = c.hnf.as_vecs();
-        let d = crate::triangular::mul_inv_from_right_exact(&ab, &c);
+        let d = number_theory_linear::triangular::mul_inv_from_right_exact(&ab, &c);
 
         let mut trd = vec![vec![BigInt::zero(); n]; n];
         for i in 0..n {

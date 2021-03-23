@@ -1,7 +1,8 @@
 use num::{BigInt, BigRational, One, Zero};
 
-use crate::hnf::HNF;
 use crate::ideal::{FracIdeal, Ideal};
+use number_theory_linear::hnf::HNF;
+use number_theory_linear::matrix;
 
 /// Multiplication table of a ring of integers (or orders).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,7 +57,7 @@ impl MultTable {
                 tr_mat[i][j] = self.trace(v).into();
             }
         }
-        let d = crate::matrix::inv(&tr_mat);
+        let d = matrix::inv(&tr_mat);
         let mut denom_lcm = BigInt::one();
 
         for i in 0..n {

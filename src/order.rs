@@ -3,12 +3,11 @@ use num::{BigInt, BigRational, One, Zero};
 use std::fmt::{Debug, Display};
 
 use crate::algebraic::Algebraic;
-use crate::determinant::determinant;
 use crate::discriminant::discriminant;
-use crate::gauss_elim::gauss_elim;
-use crate::hnf::HNF;
 use crate::mult_table::MultTable;
 use crate::polynomial::Polynomial;
+use number_theory_linear::hnf::HNF;
+use number_theory_linear::{determinant, gauss_elim};
 
 /// Order. Constructed from n vectors independent over Q.
 #[derive(Clone)]

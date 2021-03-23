@@ -2,10 +2,10 @@ use num::{BigInt, BigRational, One, Zero};
 use std::ops::{AddAssign, Mul, RemAssign};
 
 use crate::algebraic::Algebraic;
-use crate::gauss_elim::gauss_elim;
-use crate::hnf::HNF;
 use crate::order::{index, Order};
 use crate::polynomial::Polynomial;
+use number_theory_linear::gauss_elim;
+use number_theory_linear::hnf::HNF;
 
 /// Performs round 2 algorithm to an order once.
 #[allow(clippy::needless_range_loop)]

@@ -1,5 +1,7 @@
 use num::{BigInt, BigRational, Zero};
 
+use crate::matrix;
+
 /// TODO: exploit the triangularity of b.
 #[allow(clippy::needless_range_loop)]
 pub fn mul_inv_from_right_exact(a: &[Vec<BigInt>], b: &[Vec<BigInt>]) -> Vec<Vec<BigInt>> {
@@ -10,7 +12,7 @@ pub fn mul_inv_from_right_exact(a: &[Vec<BigInt>], b: &[Vec<BigInt>]) -> Vec<Vec
             brat[i][j] = b[i][j].clone().into();
         }
     }
-    let invb = crate::matrix::inv(&brat);
+    let invb = matrix::inv(&brat);
     let mut ans = vec![vec![BigInt::zero(); n]; n];
     for i in 0..n {
         for j in 0..n {

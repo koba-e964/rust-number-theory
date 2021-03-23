@@ -3,7 +3,7 @@ extern crate rust_number_theory;
 
 use num::BigInt;
 
-use rust_number_theory::hnf::HNF;
+use number_theory_linear::hnf::HNF;
 
 fn main() {
     // 3 1

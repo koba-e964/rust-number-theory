@@ -5,8 +5,8 @@ extern crate rust_number_theory;
 
 use num::{BigInt, BigRational, One, Signed, Zero};
 
+use number_theory_linear::hnf::HNF;
 use rust_number_theory::algebraic::Algebraic;
-use rust_number_theory::hnf::HNF;
 use rust_number_theory::order::{index, non_monic_initial_order, Order};
 use rust_number_theory::polynomial::Polynomial;
 

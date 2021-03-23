@@ -1,7 +1,8 @@
+use number_theory_linear::hnf::HNF;
 use rust_number_theory::algebraic::Algebraic;
+use rust_number_theory::ideal::Ideal;
 use rust_number_theory::order::Order;
 use rust_number_theory::polynomial::Polynomial;
-use rust_number_theory::{hnf::HNF, ideal::Ideal};
 
 fn main() {
     // Z[sqrt(-5)], (2, 1 + sqrt(-5))
