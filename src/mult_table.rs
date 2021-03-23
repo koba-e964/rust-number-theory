@@ -1,4 +1,7 @@
-use num::BigInt;
+use num::{BigInt, BigRational, One, Zero};
+
+use crate::hnf::HNF;
+use crate::ideal::{FracIdeal, Ideal};
 
 /// Multiplication table of a ring of integers (or orders).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,11 +32,55 @@ impl MultTable {
         }
         result
     }
+
+    #[allow(clippy::needless_range_loop)]
+    pub fn trace(&self, a: &[BigInt]) -> BigInt {
+        let n = self.deg();
+        let mut sum = BigInt::zero();
+        for i in 0..n {
+            for j in 0..n {
+                sum += &a[i] * &self.table[j][i][j];
+            }
+        }
+        sum
+    }
+
+    /// Computes the inverse of the different.
+    #[allow(clippy::needless_range_loop)]
+    pub fn get_inv_diff(&self) -> FracIdeal<'_> {
+        let n = self.deg();
+        let mut tr_mat = vec![vec![BigRational::zero(); n]; n];
+        for i in 0..n {
+            for j in 0..n {
+                let v = &self.table[i][j];
+                tr_mat[i][j] = self.trace(v).into();
+            }
+        }
+        let d = crate::matrix::inv(&tr_mat);
+        let mut denom_lcm = BigInt::one();
+
+        for i in 0..n {
+            for j in 0..n {
+                denom_lcm = num::integer::lcm(denom_lcm, d[i][j].denom().clone());
+            }
+        }
+        let mut int = vec![vec![BigInt::zero(); n]; n];
+        for i in 0..n {
+            for j in 0..n {
+                int[i][j] = (&d[i][j] * &denom_lcm).to_integer();
+            }
+        }
+        FracIdeal::new(denom_lcm, Ideal::new(HNF::hnf(&int), self))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algebraic::Algebraic;
+    use crate::order::Order;
+    use crate::polynomial::Polynomial;
+
     #[test]
     fn mult_table_works() {
         // Multiplication table for Z[i]
@@ -46,5 +93,18 @@ mod tests {
         let b = vec![4.into(), 1.into()];
         let prod = table.mul(&a, &b);
         assert_eq!(prod, vec![5.into(), 14.into()]); // (2+3i) * (4+i) = 5 + 14i
+    }
+
+    #[test]
+    fn get_inv_diff_works() {
+        // Z[sqrt(-5)], (2, 1 + sqrt(-5))
+        let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
+        let theta = Algebraic::new(p);
+        let o = Order::singly_gen(&theta);
+        let mult_table = o.get_mult_table(&theta);
+        // The inverse of the different: (sqrt(-5)) / 10
+        let inv_diff = mult_table.get_inv_diff();
+        assert_eq!(inv_diff.numer().norm(), 5.into());
+        assert_eq!(inv_diff.denom(), &10.into());
     }
 }

@@ -194,9 +194,8 @@ mod tests {
         let o = Order::singly_gen(&theta);
         let mult_table = o.get_mult_table(&theta);
         let x = Ideal::new(hnf, &mult_table);
-        // Manually construct the inverse of the different: (sqrt(-5)) / 10
-        let inv_diff = HNF::hnf(&[vec![5.into(), 0.into()], vec![0.into(), (-1).into()]]);
-        let inv_diff = FracIdeal::new(10.into(), Ideal::new(inv_diff, &mult_table));
+        // The inverse of the different: (sqrt(-5)) / 10
+        let inv_diff = mult_table.get_inv_diff();
         let x_inv = x.inv(&inv_diff); // (2, 1 + sqrt(-5)) / 2
         assert_eq!(x_inv.numer(), &x);
         assert_eq!(x_inv.denom(), &2.into());
