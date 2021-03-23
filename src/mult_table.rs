@@ -80,6 +80,7 @@ mod tests {
     use crate::algebraic::Algebraic;
     use crate::order::Order;
     use crate::polynomial::Polynomial;
+    use num::Signed;
 
     #[test]
     fn mult_table_works() {
@@ -97,14 +98,29 @@ mod tests {
 
     #[test]
     fn get_inv_diff_works() {
-        // Z[sqrt(-5)], (2, 1 + sqrt(-5))
+        // Z[sqrt(-5)]
         let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
         let theta = Algebraic::new(p);
         let o = Order::singly_gen(&theta);
         let mult_table = o.get_mult_table(&theta);
         // The inverse of the different: (sqrt(-5)) / 10
         let inv_diff = mult_table.get_inv_diff();
-        assert_eq!(inv_diff.numer().norm(), 5.into());
-        assert_eq!(inv_diff.denom(), &10.into());
+        let den = inv_diff.denom();
+        let num = inv_diff.numer().norm();
+        assert_eq!(den * den / num, o.discriminant(&theta).abs());
+    }
+
+    #[test]
+    fn get_inv_diff_works_2() {
+        // Q(cbrt(-19))
+        let p = Polynomial::from_raw(vec![19.into(), 0.into(), 0.into(), 1.into()]);
+        let theta = Algebraic::new(p);
+        let o = crate::integral_basis::find_integral_basis(&theta);
+        let mult_table = o.get_mult_table(&theta);
+        // Because D(Q(cbrt(-19))) = -1083 = -3 * 19^2, inv_diff's norm should be 1/1083.
+        let inv_diff = mult_table.get_inv_diff();
+        let den = inv_diff.denom();
+        let num = inv_diff.numer().norm();
+        assert_eq!(den * den * den / num, o.discriminant(&theta).abs());
     }
 }
