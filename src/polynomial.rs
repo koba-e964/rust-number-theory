@@ -1,9 +1,9 @@
 extern crate num;
 
-use num::{pow, BigInt, BigRational, One, Zero};
+use num::{pow, BigInt, BigRational, Complex, One, Zero};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
-use std::ops::{Add, AddAssign, Mul, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 // The leading coefficient (a[a.len() - 1]) must not be 0.
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,6 +67,21 @@ impl Polynomial<BigInt> {
     }
 }
 
+impl Polynomial<Complex<f64>> {
+    pub fn differential(&self) -> Polynomial<Complex<f64>> {
+        if self.is_zero_primitive() {
+            return self.clone();
+        }
+        let deg = self.deg();
+        let mut tmp = vec![Complex::default(); deg];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..deg {
+            tmp[i] = self.dat[i + 1] * (i + 1) as f64;
+        }
+        Polynomial::from_raw(tmp)
+    }
+}
+
 impl<R: One + PartialEq> Polynomial<R> {
     fn is_monic(&self) -> bool {
         if self.is_zero_primitive() {
@@ -74,6 +89,18 @@ impl<R: One + PartialEq> Polynomial<R> {
         }
         let deg = self.deg();
         self.dat[deg].is_one()
+    }
+}
+
+impl<R: AddAssign + Zero + MulAssign + Clone> Polynomial<R> {
+    pub fn of(&self, x: R) -> R {
+        let mut sum = R::zero();
+        let deg = self.deg();
+        for i in (0..deg + 1).rev() {
+            sum *= x.clone();
+            sum += self.coef_at(i);
+        }
+        sum
     }
 }
 
