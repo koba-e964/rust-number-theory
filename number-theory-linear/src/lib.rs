@@ -6,3 +6,4 @@ pub mod triangular;
 
 pub use determinant::determinant;
 pub use gauss_elim::gauss_elim;
+pub use matrix::MatrixNotInvertible;

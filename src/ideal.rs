@@ -62,7 +62,7 @@ impl<'mul> Ideal<'mul> {
             }
         }
         let c = c.hnf.as_vecs();
-        let d = number_theory_linear::triangular::mul_inv_from_right_exact(&ab, &c);
+        let d = number_theory_linear::triangular::mul_inv_from_right_exact(&ab, &c).unwrap();
 
         let mut trd = vec![vec![BigInt::zero(); n]; n];
         for i in 0..n {

@@ -57,7 +57,7 @@ impl MultTable {
                 tr_mat[i][j] = self.trace(v).into();
             }
         }
-        let d = matrix::inv(&tr_mat);
+        let d = matrix::inv(&tr_mat).unwrap();
         let mut denom_lcm = BigInt::one();
 
         for i in 0..n {

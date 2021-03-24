@@ -1,23 +1,30 @@
-use num::{traits::Inv, BigRational, One, Zero};
+use num::rational::Ratio;
+use num::traits::{Inv, NumAssign};
+use num::{Integer, One, Zero};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct MatrixNotInvertible;
 
 #[allow(clippy::needless_range_loop)]
-pub fn inv(a: &[Vec<BigRational>]) -> Vec<Vec<BigRational>> {
+pub fn inv<Int: Clone + Integer + NumAssign>(
+    a: &[Vec<Ratio<Int>>],
+) -> Result<Vec<Vec<Ratio<Int>>>, MatrixNotInvertible> {
     let n = a.len();
     let mut a = a.to_vec();
-    let mut b = vec![vec![BigRational::zero(); n]; n];
+    let mut b = vec![vec![Ratio::zero(); n]; n];
     for i in 0..n {
-        b[i][i] = BigRational::one();
+        b[i][i] = Ratio::one();
     }
     for i in 0..n {
         let mut idx = None;
         for j in i..n {
-            if a[j][i] != BigRational::zero() {
+            if a[j][i] != Ratio::zero() {
                 idx = Some(j);
                 break;
             }
         }
         let idx = match idx {
-            None => panic!(),
+            None => return Err(MatrixNotInvertible),
             Some(idx) => idx,
         };
         a.swap(i, idx);
@@ -40,24 +47,17 @@ pub fn inv(a: &[Vec<BigRational>]) -> Vec<Vec<BigRational>> {
             }
         }
     }
-    b
+    Ok(b)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use num::BigInt;
     #[test]
     fn inv_works() {
-        let a = vec![
-            vec![BigInt::from(5).into(), BigInt::from(2).into()],
-            vec![BigInt::from(2).into(), BigInt::from(1).into()],
-        ];
+        let a = vec![vec![5.into(), 2.into()], vec![2.into(), 1.into()]];
         let inv = inv(&a);
-        let inv_expected = vec![
-            vec![BigInt::from(1).into(), BigInt::from(-2).into()],
-            vec![BigInt::from(-2).into(), BigInt::from(5).into()],
-        ];
-        assert_eq!(inv, inv_expected);
+        let inv_expected = vec![vec![1.into(), (-2).into()], vec![(-2).into(), 5.into()]];
+        assert_eq!(inv, Ok(inv_expected));
     }
 }
