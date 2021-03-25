@@ -33,14 +33,14 @@ fn find_once(
 ) -> Option<Complex<f64>> {
     let mut iter = 0;
     loop {
-        let val = poly.of(x);
+        let val = poly.of(&x);
         if val.norm_sqr() <= EPS {
             break;
         }
         if iter >= 100 {
             return None;
         }
-        let diff = der.of(x);
+        let diff = der.of(&x);
         x -= val / diff;
         iter += 1;
     }

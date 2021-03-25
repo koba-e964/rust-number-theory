@@ -93,7 +93,7 @@ impl<R: One + PartialEq> Polynomial<R> {
 }
 
 impl<R: AddAssign + Zero + MulAssign + Clone> Polynomial<R> {
-    pub fn of(&self, x: R) -> R {
+    pub fn of(&self, x: &R) -> R {
         let mut sum = R::zero();
         let deg = self.deg();
         for i in (0..deg + 1).rev() {
