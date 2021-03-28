@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)]
+
 use num::traits::Pow;
 use num::{BigInt, BigRational, One, Zero};
 use std::fmt::{Debug, Display};
@@ -46,7 +48,6 @@ impl Order {
     }
 
     /// Reduce this order to HNF.
-    #[allow(clippy::needless_range_loop)]
     pub fn hnf_reduce(&self) -> Order {
         let mut lcm = BigInt::one();
         let deg = self.basis.len();
@@ -71,7 +72,6 @@ impl Order {
         Order { basis: result }
     }
 
-    #[allow(clippy::needless_range_loop)]
     pub fn get_mult_table(&self, theta: &Algebraic) -> MultTable {
         let deg = self.deg();
         let mut table = vec![vec![vec![BigInt::zero(); deg]; deg]; deg];
@@ -95,7 +95,7 @@ impl Order {
         }
         MultTable::new(table)
     }
-    // This code snipped is copy-pasted from round2.
+    // This code snippet is copy-pasted from round2.
     // TODO: unify
     fn create_num(a: &[BigRational], theta: &Algebraic) -> Algebraic {
         Algebraic {
@@ -111,8 +111,7 @@ impl Order {
         for k in 0..deg {
             b[k] = a.expr.coef_at(k);
         }
-        let inv = gauss_elim(&self.basis, &b).expect("O is not linearly independent");
-        inv
+        gauss_elim(&self.basis, &b).expect("O is not linearly independent")
     }
 
     pub fn to_z_basis_int(&self, a: &Algebraic) -> Vec<BigInt> {
@@ -135,7 +134,6 @@ impl Display for Order {
         }
         let n = basis[0].len();
         for row in basis {
-            #[allow(clippy::needless_range_loop)]
             for j in 0..n {
                 write!(f, "{}{}", row[j], if j + 1 == n { "\n" } else { " " })?;
             }
@@ -168,7 +166,6 @@ pub fn index(a: &Order, b: &Order) -> BigInt {
 pub fn trivial_order_monic(theta: &Algebraic) -> Order {
     let deg = theta.deg();
     let mut basis = vec![vec![BigRational::zero(); deg]; deg];
-    #[allow(clippy::needless_range_loop)]
     for i in 0..deg {
         basis[i][i] = BigRational::one();
     }
@@ -180,7 +177,6 @@ pub fn non_monic_initial_order(theta: &Algebraic) -> Order {
     let deg = theta.deg();
     let mut basis = vec![vec![BigRational::zero(); deg]; deg];
     basis[0][0] = BigRational::one();
-    #[allow(clippy::needless_range_loop)]
     for i in 1..deg {
         for j in 1..i + 1 {
             basis[i][j] = BigRational::from_integer(theta.min_poly.coef_at(deg - (i - j)));
@@ -212,14 +208,12 @@ pub fn union(a: &Order, b: &Order) -> Order {
     }
     let mut basis_a = vec![vec![BigInt::zero(); m]; na];
     let mut basis_b = vec![vec![BigInt::zero(); m]; nb];
-    #[allow(clippy::needless_range_loop)]
     for i in 0..na {
         for j in 0..m {
             let val = (&a.basis[i][j] * &lcm).to_integer();
             basis_a[i][j] = val;
         }
     }
-    #[allow(clippy::needless_range_loop)]
     for i in 0..nb {
         for j in 0..m {
             let val = (&b.basis[i][j] * &lcm).to_integer();
@@ -229,7 +223,6 @@ pub fn union(a: &Order, b: &Order) -> Order {
     let hnf = HNF::union(&HNF(basis_a), &HNF(basis_b));
     let n = hnf.0[0].len();
     let mut neword = vec![vec![BigRational::zero(); m]; n];
-    #[allow(clippy::needless_range_loop)]
     for i in 0..n {
         for j in 0..m {
             neword[i][j] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());

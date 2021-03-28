@@ -1,4 +1,4 @@
-use num::{BigInt, BigRational, One, Zero};
+use num::{BigInt, BigRational, One, Signed, Zero};
 
 use crate::ideal::{FracIdeal, Ideal};
 use number_theory_linear::{determinant, hnf::HNF, matrix};
@@ -59,6 +59,28 @@ impl MultTable {
         determinant(&sum).to_integer()
     }
 
+    /// Returns (i, d) s.t. a^{-1} = i / d
+    #[allow(clippy::needless_range_loop)]
+    pub fn inv(&self, a: &[BigInt]) -> (Vec<BigInt>, BigInt) {
+        let norm = self.norm(a).abs();
+        let n = self.deg();
+        let mut sum = vec![vec![BigRational::zero(); n]; n];
+        for i in 0..n {
+            for j in 0..n {
+                for k in 0..n {
+                    sum[j][k] += BigRational::from(&a[i] * &self.table[i][j][k]);
+                }
+            }
+        }
+        let inv = matrix::inv(&sum).unwrap();
+        let mut ans = vec![BigInt::zero(); n];
+        // Assuming w[0] is always 1.
+        for i in 0..n {
+            ans[i] = (&inv[0][i] * &norm).to_integer()
+        }
+        (ans, norm)
+    }
+
     /// Computes the inverse of the different.
     #[allow(clippy::needless_range_loop)]
     pub fn get_inv_diff(&self) -> FracIdeal<'_> {
@@ -108,6 +130,35 @@ mod tests {
         let b = vec![4.into(), 1.into()];
         let prod = table.mul(&a, &b);
         assert_eq!(prod, vec![5.into(), 14.into()]); // (2+3i) * (4+i) = 5 + 14i
+    }
+
+    #[test]
+    fn inv_works_1() {
+        // Z[sqrt(-5)]
+        let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
+        let theta = Algebraic::new(p);
+        let o = Order::singly_gen(&theta);
+        let mult_table = o.get_mult_table(&theta);
+        // 1 + sqrt(-5)
+        let a = vec![1.into(), 1.into()];
+        let (inv, norm) = mult_table.inv(&a);
+        assert_eq!(inv, vec![1.into(), (-1).into()]);
+        assert_eq!(norm, 6.into());
+    }
+
+    #[test]
+    fn inv_works_2() {
+        // Z[sqrt(5)]
+        let p = Polynomial::from_raw(vec![(-5).into(), 0.into(), 1.into()]);
+        let theta = Algebraic::new(p);
+        let o = Order::singly_gen(&theta);
+        let mult_table = o.get_mult_table(&theta);
+        // 1 + sqrt(5)
+        let a = vec![1.into(), 1.into()];
+        let (inv, norm) = mult_table.inv(&a);
+        // the inverse is (1 - sqrt(5)) / (-4) = (-1 + sqrt(5)) / 4. Even if the norm is negative, the returned denominator is positive.
+        assert_eq!(inv, vec![(-1).into(), 1.into()]);
+        assert_eq!(norm, 4.into());
     }
 
     #[test]
