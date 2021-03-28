@@ -81,9 +81,7 @@ fn find_linear_factors_impl<
     // Since poly has no linear factors, we can simply discard poly.
 }
 
-fn find_linear_factors_impl_mod2<
-    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + SampleUniform,
->(
+fn find_linear_factors_impl_mod2<Int: Clone + Integer + NumAssign>(
     poly: &Polynomial<Int>,
     result: &mut Vec<Int>,
 ) {
@@ -98,7 +96,7 @@ fn find_linear_factors_impl_mod2<
     }
 }
 
-fn modpow<Int: Clone + NumAssign + Integer>(x: &Int, e: &Int, modulus: &Int) -> Int {
+fn modpow<Int: Clone + Integer>(x: &Int, e: &Int, modulus: &Int) -> Int {
     let mut e = e.clone();
     let mut product = Int::one();
     let mut current = x.clone();
@@ -113,7 +111,7 @@ fn modpow<Int: Clone + NumAssign + Integer>(x: &Int, e: &Int, modulus: &Int) -> 
     product
 }
 
-fn modinv<Int: Clone + NumAssign + Integer>(x: &Int, p: &Int) -> Int {
+fn modinv<Int: Clone + Integer>(x: &Int, p: &Int) -> Int {
     let two = Int::one() + Int::one();
     modpow(x, &(p.clone() - two), p)
 }
