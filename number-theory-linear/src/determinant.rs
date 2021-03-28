@@ -23,6 +23,9 @@ pub fn determinant(a: &[Vec<BigRational>]) -> BigRational {
             Some(idx) => idx,
         };
         a.swap(i, idx);
+        if i != idx {
+            result = -result;
+        }
         for j in i + 1..n {
             let factor = &a[j][i] / &a[i][i];
             for k in i..n {
@@ -58,5 +61,11 @@ mod tests {
             vec![to_rat(-2), to_rat(-3), to_rat(2)],
         ];
         assert_eq!(determinant(&mat), to_rat(33));
+    }
+    #[test]
+    fn test_determinant_3() {
+        // det((0, 1; 1, 0)) = -1
+        let mat = vec![vec![to_rat(0), to_rat(1)], vec![to_rat(1), to_rat(0)]];
+        assert_eq!(determinant(&mat), to_rat(-1));
     }
 }
