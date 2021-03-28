@@ -1,8 +1,7 @@
 use num::{BigInt, BigRational, One, Zero};
 
 use crate::ideal::{FracIdeal, Ideal};
-use number_theory_linear::hnf::HNF;
-use number_theory_linear::matrix;
+use number_theory_linear::{determinant, hnf::HNF, matrix};
 
 /// Multiplication table of a ring of integers (or orders).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,6 +43,20 @@ impl MultTable {
             }
         }
         sum
+    }
+
+    #[allow(clippy::needless_range_loop)]
+    pub fn norm(&self, a: &[BigInt]) -> BigInt {
+        let n = self.deg();
+        let mut sum = vec![vec![BigRational::zero(); n]; n];
+        for i in 0..n {
+            for j in 0..n {
+                for k in 0..n {
+                    sum[j][k] += BigRational::from(&a[i] * &self.table[i][j][k]);
+                }
+            }
+        }
+        determinant(&sum).to_integer()
     }
 
     /// Computes the inverse of the different.

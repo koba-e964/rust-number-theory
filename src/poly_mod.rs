@@ -152,6 +152,10 @@ where
 
 fn poly_mod<Int: Clone + NumAssign + Integer>(f: &Polynomial<Int>, p: &Int) -> Polynomial<Int> {
     let deg = f.deg();
+    if deg == usize::MAX {
+        // f = 0
+        return f.clone();
+    }
     let mut raw = vec![Int::zero(); deg + 1];
     for i in 0..deg + 1 {
         raw[i] = f.coef_at(i) % p.clone();

@@ -103,6 +103,28 @@ impl Order {
             expr: Polynomial::from_raw(a.to_vec()),
         }
     }
+
+    /// Converts an Algebraic (represented as a polynomial of theta) to a coefficient vector (with this Z-basis).
+    pub fn to_z_basis(&self, a: &Algebraic) -> Vec<BigRational> {
+        let deg = self.deg();
+        let mut b = vec![BigRational::zero(); deg];
+        for k in 0..deg {
+            b[k] = a.expr.coef_at(k);
+        }
+        let inv = gauss_elim(&self.basis, &b).expect("O is not linearly independent");
+        inv
+    }
+
+    pub fn to_z_basis_int(&self, a: &Algebraic) -> Vec<BigInt> {
+        let deg = self.deg();
+        let inv = self.to_z_basis(a);
+        let mut returned = vec![BigInt::zero(); deg];
+        for i in 0..deg {
+            assert!(inv[i].is_integer());
+            returned[i] = inv[i].clone().to_integer();
+        }
+        returned
+    }
 }
 
 impl Display for Order {

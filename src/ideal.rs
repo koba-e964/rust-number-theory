@@ -72,6 +72,14 @@ impl<'mul> Ideal<'mul> {
         }
         FracIdeal::new(a, Ideal::new(HNF::hnf(&trd), self.mult_table))
     }
+
+    pub fn contains(&self, num: &[BigInt]) -> bool {
+        // Solved in an elephant way: checking if this + (num) == this
+        // TODO improve
+        let num_ideal = Self::principal(num, self.mult_table);
+        let new_ideal = self + &num_ideal;
+        new_ideal == *self
+    }
 }
 
 impl<'a, 'mul> Add for &'a Ideal<'mul> {
