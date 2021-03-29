@@ -1,12 +1,13 @@
 #![allow(clippy::needless_range_loop)]
 
-use num::{bigint::Sign, BigInt, BigRational, One, Zero};
+use num::{bigint::Sign, BigInt, BigRational, Complex, One, ToPrimitive, Zero};
 use number_theory_linear::hnf::HNF;
 use rust_number_theory::{
     algebraic::Algebraic,
     ideal::Ideal,
     integral_basis::find_integral_basis,
     mult_table::MultTable,
+    numerical_roots::find_roots_reim,
     order::{self, Order},
     poly_mod::find_linear_factors,
     polynomial::Polynomial,
@@ -111,6 +112,7 @@ fn factorize_with_known_primes<'mul>(
 
 fn main() {
     let poly = Polynomial::from_raw(vec![(-41).into(), 0.into(), 1.into()]);
+    let poly_complex = Polynomial::from_raw(vec![(-41.0).into(), 0.0.into(), 1.0.into()]);
     let deg = poly.deg();
     let theta = Algebraic::new(poly.clone());
     let o = find_integral_basis(&theta);
@@ -149,6 +151,7 @@ fn main() {
     }
     let h = rows.len();
     let ker = HNF::kernel(&rows);
+    let mut unit_cand = vec![];
     for entry in ker {
         // Because inverting an integer is a costly operation, we will invert only once in the last step.
         let mut num = vec![BigInt::zero(); deg];
@@ -173,5 +176,38 @@ fn main() {
             res[i] /= &denden;
         }
         eprintln!("res = {:?}", res);
+        unit_cand.push(res);
+    }
+    let (roots_re, roots_im) = find_roots_reim(poly_complex.clone());
+    let r = roots_re.len();
+    let s = roots_im.len();
+    let mut basis = vec![vec![Complex::new(0.0, 0.0); deg]; r + s];
+    for i in 0..r + s {
+        let root = if i < r {
+            roots_re[i].into()
+        } else {
+            roots_im[i]
+        };
+        for j in 0..deg {
+            let mut current = Complex::new(1.0, 0.0);
+            for k in 0..deg {
+                basis[i][j] += o.basis[j][k].to_f64().unwrap() * current;
+                current *= root;
+            }
+        }
+        eprintln!("root = {}, basis = {:?}", root, basis[i]);
+    }
+    for i in 0..unit_cand.len() {
+        let num = &unit_cand[i];
+        let mut lnvec = vec![];
+        for j in 0..r + s {
+            let mut val = Complex::new(0.0, 0.0);
+            for k in 0..deg {
+                val += basis[j][k] * num[k].to_f64().unwrap();
+            }
+            let ln = val.norm_sqr().ln() / 2.0;
+            lnvec.push(ln);
+        }
+        eprintln!("num = {:?}, ln = {:?}", num, lnvec);
     }
 }

@@ -5,6 +5,33 @@ use crate::polynomial::Polynomial;
 
 const EPS: f64 = 1.0e-18;
 
+pub fn find_roots_reim(mut poly: Polynomial<Complex<f64>>) -> (Vec<f64>, Vec<Complex<f64>>) {
+    let mut re = vec![];
+    let mut im = vec![];
+    // Randomly pick an initial starting point
+    let mut rng = rand::thread_rng();
+    let mut trial = 3;
+    while poly.deg() > 0 && trial > 0 {
+        let der = poly.differential();
+        let r = rng.gen_range(0.0..2.0);
+        let theta = rng.gen_range(0.0..std::f64::consts::PI);
+        let x = Complex::from_polar(r, theta);
+        if let Some(x) = find_once(&poly, &der, x) {
+            if x.im.abs() <= EPS {
+                re.push(x.re);
+            } else {
+                im.push(x);
+                poly = divide_by_x_a(&poly, x.conj());
+            }
+            poly = divide_by_x_a(&poly, x);
+        } else {
+            trial -= 1;
+        }
+    }
+    assert_eq!(poly.deg(), 0);
+    (re, im)
+}
+
 pub fn find_roots(mut poly: Polynomial<Complex<f64>>) -> Vec<Complex<f64>> {
     let mut roots = vec![];
     // Randomly pick an initial starting point
@@ -34,14 +61,14 @@ fn find_once(
     let mut iter = 0;
     loop {
         let val = poly.of(&x);
+        let diff = der.of(&x);
+        x -= val / diff;
         if val.norm_sqr() <= EPS {
             break;
         }
         if iter >= 100 {
             return None;
         }
-        let diff = der.of(&x);
-        x -= val / diff;
         iter += 1;
     }
     Some(x)
