@@ -20,13 +20,13 @@ pub fn determinant_real(a: &[Vec<f64>]) -> f64 {
             result = -result;
         }
         for j in i + 1..n {
-            let factor = &a[j][i] / &a[i][i];
+            let factor = a[j][i] / a[i][i];
             for k in i..n {
-                let tmp = &factor * &a[i][k];
+                let tmp = factor * a[i][k];
                 a[j][k] -= tmp;
             }
         }
-        result *= &a[i][i];
+        result *= a[i][i];
     }
     result
 }

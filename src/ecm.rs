@@ -42,6 +42,7 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
 }
 
 /// Configuration for ECM.
+#[allow(clippy::upper_case_acronyms)]
 pub struct ECMConfig {
     pub b1: u64,
     pub b2: u64,

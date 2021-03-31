@@ -10,6 +10,7 @@ use std::fmt::Display;
 /// Sequences of vectors are indexed as a[i][j]; in this indexing,
 /// a[i] is treated as a row vector in the ordinary matrix indexing.
 /// Therefore, it is better understood as a sequence of row vectors than a sequence of column vectors.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HNF(pub Vec<Vec<BigInt>>);
 
