@@ -5,7 +5,8 @@ use crate::polynomial::Polynomial;
 
 const EPS: f64 = 1.0e-18;
 
-pub fn find_roots_reim(mut poly: Polynomial<Complex<f64>>) -> (Vec<f64>, Vec<Complex<f64>>) {
+pub fn find_roots_reim(poly: Polynomial<f64>) -> (Vec<f64>, Vec<Complex<f64>>) {
+    let mut poly = Polynomial::from_raw(poly.dat.into_iter().map(|x| Complex::from(x)).collect());
     let mut re = vec![];
     let mut im = vec![];
     // Randomly pick an initial starting point

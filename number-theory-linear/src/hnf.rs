@@ -37,13 +37,13 @@ impl HNF {
     ///
     /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
     pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
-        hnf_with_u(a).0
+        hnf_with_ker(a).0
     }
 
     /// Returns a collection of row vectors u s.t. uA = 0.
     /// Returned elements are guaranteed to be linearly independent.
     pub fn kernel(a: &[Vec<BigInt>]) -> Vec<Vec<BigInt>> {
-        hnf_with_u(a).1
+        hnf_with_ker(a).1
     }
 
     pub fn as_vecs(&self) -> Vec<Vec<BigInt>> {
@@ -52,11 +52,26 @@ impl HNF {
 
     pub fn determinant(&self) -> BigInt {
         let mut prod = BigInt::from(1);
+        if self.dim() != self.deg() {
+            return BigInt::zero();
+        }
         #[allow(clippy::needless_range_loop)]
         for i in 0..self.0.len() {
             prod *= &self.0[i][i];
         }
         prod
+    }
+
+    pub fn dim(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn deg(&self) -> usize {
+        if self.dim() == 0 {
+            0
+        } else {
+            self.0[0].len()
+        }
     }
 }
 
@@ -78,14 +93,21 @@ impl Display for HNF {
     }
 }
 
+#[allow(clippy::many_single_char_names)]
+pub fn hnf_with_ker(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
+    let (w, u, k) = hnf_with_u(a);
+    let u = u[..k].to_vec();
+    (w, u)
+}
+
 /// Algorithm 2.4.4 in [Cohen]
-/// Given a n * m matrix A, Computes the HNF B of A and an n * n matrix U s.t. B = UA.
+/// Given a n * m matrix A, Computes the HNF B of A, an n * n matrix U s.t. B = UA and dim ker A.
 ///
 /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 #[allow(clippy::many_single_char_names)]
-fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
+pub fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>, usize) {
     if a.is_empty() {
-        return (HNF(vec![]), vec![]);
+        return (HNF(vec![]), vec![], 0);
     }
     let mut a = a.to_vec();
     // Step 1: Initialize
@@ -177,8 +199,7 @@ fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
     }
     // Step 6: Finished?
     let w = a[k..].to_vec();
-    let u = u[..k].to_vec();
-    (HNF(w), u)
+    (HNF(w), u, k)
 }
 
 /// Computes floor(a / b).

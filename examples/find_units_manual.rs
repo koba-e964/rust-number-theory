@@ -1,7 +1,9 @@
 #![allow(clippy::needless_range_loop)]
 
 use num::{bigint::Sign, BigInt, BigRational, Complex, One, ToPrimitive, Zero};
-use number_theory_linear::hnf::HNF;
+use number_theory_linear::determinant_real;
+use number_theory_linear::hnf::{self, HNF};
+use rand::Rng;
 use rust_number_theory::{
     algebraic::Algebraic,
     ideal::Ideal,
@@ -111,8 +113,12 @@ fn factorize_with_known_primes<'mul>(
 }
 
 fn main() {
-    let poly = Polynomial::from_raw(vec![(-41).into(), 0.into(), 1.into()]);
-    let poly_complex = Polynomial::from_raw(vec![(-41.0).into(), 0.0.into(), 1.0.into()]);
+    let mut rng = rand::thread_rng();
+
+    let poly_vec: Vec<BigInt> = vec![(-41).into(), 0.into(), 1.into()];
+    let poly = Polynomial::from_raw(poly_vec.clone());
+    let poly_complex =
+        Polynomial::from_raw(poly_vec.into_iter().map(|b| b.to_f64().unwrap()).collect());
     let deg = poly.deg();
     let theta = Algebraic::new(poly.clone());
     let o = find_integral_basis(&theta);
@@ -135,7 +141,7 @@ fn main() {
     let mut rows = vec![];
     let mut nums = vec![];
     for a in 0..20 {
-        for b in 0..10 {
+        for b in -10..10 {
             let num: Vec<BigInt> = vec![a.into(), b.into()];
             if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
                 let mut row = vec![BigInt::zero(); w];
@@ -151,6 +157,12 @@ fn main() {
     }
     let h = rows.len();
     let ker = HNF::kernel(&rows);
+    let (principal, _u, _k) = hnf::hnf_with_u(&rows);
+    let cl = principal.determinant();
+    eprintln!("tentative Cl(K) = {}", cl);
+    for p in &principal.0 {
+        eprintln!("{:?}", p);
+    }
     let mut unit_cand = vec![];
     for entry in ker {
         // Because inverting an integer is a costly operation, we will invert only once in the last step.
@@ -182,6 +194,7 @@ fn main() {
     let r = roots_re.len();
     let s = roots_im.len();
     let mut basis = vec![vec![Complex::new(0.0, 0.0); deg]; r + s];
+    let mut lnmatrix = vec![];
     for i in 0..r + s {
         let root = if i < r {
             roots_re[i].into()
@@ -209,5 +222,25 @@ fn main() {
             lnvec.push(ln);
         }
         eprintln!("num = {:?}, ln = {:?}", num, lnvec);
+        lnmatrix.push(lnvec);
     }
+    // randomly pick r + s - 1 elements
+    let mut perm: Vec<usize> = (0..unit_cand.len()).collect();
+    for i in 0..unit_cand.len() {
+        let idx = rng.gen_range(0..i + 1);
+        perm.swap(i, idx);
+    }
+    let mut matrix = vec![vec![0.0; r + s - 1]; r + s - 1];
+    for i in 0..r + s - 1 {
+        for j in 0..r + s - 1 {
+            matrix[i][j] = lnmatrix[perm[i]][j];
+        }
+    }
+    let reg = determinant_real(&matrix);
+    eprintln!(
+        "tentative Reg(K) = {}, Cl(K) = {}, prod = {}",
+        reg,
+        cl,
+        reg * cl.to_f64().unwrap(),
+    );
 }
