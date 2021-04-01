@@ -1,6 +1,6 @@
 #![allow(clippy::needless_range_loop)]
 
-use num::{bigint::Sign, BigInt, BigRational, Complex, One, ToPrimitive, Zero};
+use num::{bigint::Sign, BigInt, BigRational, Complex, Integer, One, ToPrimitive, Zero};
 use number_theory_linear::determinant_real;
 use number_theory_linear::hnf::{self, HNF};
 use rand::Rng;
@@ -14,7 +14,7 @@ use rust_number_theory::{
     poly_mod::find_linear_factors,
     polynomial::Polynomial,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// (Prime ideal, its residue class degree)
 type PrimeIdeal<'mul> = (Ideal<'mul>, usize);
@@ -27,18 +27,57 @@ fn factor_prime<'mul>(
     o: &Order,
     theta: &Algebraic,
 ) -> Option<Vec<PrimeIdeal<'mul>>> {
+    let deg = poly.deg();
     let pow_basis = Order::singly_gen(theta);
     let index = order::index(o, &pow_basis);
     if (index % p).is_zero() {
+        // Ad-hoc factorization: if poly.deg() == 2 and poly = x^2 - a for a odd, we know (2) splits or is inert, depending on a mod 4.
+        if p == &BigInt::from(2)
+            && poly.coef_at(1) == 0.into()
+            && poly.coef_at(2) == 1.into()
+            && poly.coef_at(0).is_odd()
+        {
+            let a = -poly.coef_at(0).clone();
+            let rem = a.mod_floor(&BigInt::from(4));
+            // (2)
+            let mut pnum = vec![BigInt::zero(); deg];
+            pnum[0] = BigInt::from(2);
+            let ideal = Ideal::principal(&pnum, mult_table);
+            if rem == 1.into() {
+                // (2) splits. (2) = (2, eta)(2, eta+1) where eta = (1+theta) / 2
+                let eta = Algebraic::with_expr(
+                    theta.min_poly.clone(),
+                    Polynomial::from_raw(vec![
+                        BigRational::new(BigInt::one(), BigInt::from(2)),
+                        BigRational::new(BigInt::one(), BigInt::from(2)),
+                    ]),
+                );
+                let mut eta = o.to_z_basis_int(&eta);
+                let ideal_0 = &ideal + &Ideal::principal(&eta, mult_table);
+                eta[0] += 1;
+                let ideal_1 = &ideal + &Ideal::principal(&eta, mult_table);
+                return Some(vec![(ideal_0, 1), (ideal_1, 1)]);
+            } else {
+                // (2) is inert
+                return Some(vec![(ideal, 2)]);
+            }
+        }
         return None;
     }
     let mut factors = find_linear_factors::<BigInt>(poly, p.clone());
+    // ad-hoc factorization: if poly.deg() == 2 and there are no linear factors, we know that poly is irreducible.
+    if factors.len() == 0 && poly.deg() == 2 {
+        // (p)
+        let mut pnum = vec![BigInt::zero(); deg];
+        pnum[0] = p.clone();
+        let ideal = Ideal::principal(&pnum, mult_table);
+        return Some(vec![(ideal, 2)]);
+    }
     if factors.len() != poly.deg() {
         return None;
     }
     factors.sort();
     factors.dedup();
-    let deg = poly.deg();
     let mut ideals = vec![];
     for a in factors {
         // (p, theta - a)
@@ -112,10 +151,29 @@ fn factorize_with_known_primes<'mul>(
     }
 }
 
+fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>) -> f64 {
+    let mut ans = 1.0;
+    for &p in primes {
+        let big_p = BigInt::from(p);
+        let on_p = &map[&big_p];
+        let pinv = 1.0 / p as f64;
+        for &(_, f) in on_p {
+            let mut tmp = 1.0;
+            for _ in 0..f {
+                tmp *= pinv;
+            }
+            ans *= 1.0 - tmp;
+        }
+        ans /= 1.0 - pinv;
+    }
+    1.0 / ans
+}
+
 fn main() {
     let mut rng = rand::thread_rng();
 
     let poly_vec: Vec<BigInt> = vec![(-41).into(), 0.into(), 1.into()];
+    let muk = 2; // TODO: compute
     let poly = Polynomial::from_raw(poly_vec.clone());
     let poly_complex =
         Polynomial::from_raw(poly_vec.into_iter().map(|b| b.to_f64().unwrap()).collect());
@@ -124,7 +182,7 @@ fn main() {
     let o = find_integral_basis(&theta);
     eprintln!("o = {:?}", o);
     let mult_table = o.get_mult_table(&theta);
-    let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43];
+    let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 43];
     let mut map = HashMap::new();
     let mut offsets = HashMap::new();
     let mut offset = 0;
@@ -140,7 +198,7 @@ fn main() {
     let w = offset;
     let mut rows = vec![];
     let mut nums = vec![];
-    for a in 0..20 {
+    for a in 0..30 {
         for b in -10..10 {
             let num: Vec<BigInt> = vec![a.into(), b.into()];
             if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
@@ -160,8 +218,26 @@ fn main() {
     let (principal, _u, _k) = hnf::hnf_with_u(&rows);
     let cl = principal.determinant();
     eprintln!("tentative Cl(K) = {}", cl);
+    let mut unseen: HashSet<usize> = (0..w).collect();
     for p in &principal.0 {
         eprintln!("{:?}", p);
+        for i in 0..w {
+            if !p[i].is_zero() {
+                unseen.remove(&i);
+            }
+        }
+    }
+    if cl.is_zero() {
+        for idx in unseen {
+            let mut pid = None;
+            for (p, &o) in &offsets {
+                if o <= idx && idx < map[p].len() + o {
+                    pid = Some(map[p][idx - o].clone());
+                }
+            }
+            eprintln!("idx = {}, p = {:?}", idx, pid);
+        }
+        return;
     }
     let mut unit_cand = vec![];
     for entry in ker {
@@ -224,23 +300,36 @@ fn main() {
         eprintln!("num = {:?}, ln = {:?}", num, lnvec);
         lnmatrix.push(lnvec);
     }
-    // randomly pick r + s - 1 elements
-    let mut perm: Vec<usize> = (0..unit_cand.len()).collect();
-    for i in 0..unit_cand.len() {
-        let idx = rng.gen_range(0..i + 1);
-        perm.swap(i, idx);
-    }
-    let mut matrix = vec![vec![0.0; r + s - 1]; r + s - 1];
-    for i in 0..r + s - 1 {
-        for j in 0..r + s - 1 {
-            matrix[i][j] = lnmatrix[perm[i]][j];
+    loop {
+        // randomly pick r + s - 1 elements
+        let mut perm: Vec<usize> = (0..unit_cand.len()).collect();
+        for i in 0..unit_cand.len() {
+            let idx = rng.gen_range(0..i + 1);
+            perm.swap(i, idx);
+        }
+        let mut matrix = vec![vec![0.0; r + s - 1]; r + s - 1];
+        for i in 0..r + s - 1 {
+            for j in 0..r + s - 1 {
+                matrix[i][j] = lnmatrix[perm[i]][j];
+            }
+        }
+        let reg = determinant_real(&matrix).abs();
+        let product = reg * cl.to_f64().unwrap();
+        eprintln!(
+            "tentative Reg(K) = {}, Cl(K) = {}, prod = {}",
+            reg, cl, product,
+        );
+        let euler_prod = euler_prod(&primes, &map);
+        // https://www.isibang.ac.in/~sury/algoiisc.pdf
+        let mut a = euler_prod;
+        a *= muk as f64;
+        a *= o.discriminant(&theta).to_f64().unwrap().abs().sqrt();
+        a /= 2.0f64.powf(r as f64);
+        a /= (2.0 * std::f64::consts::PI).powf(s as f64);
+        eprintln!("a = {}", a);
+        if product > 0.707 * a && product < 1.414 * a {
+            eprintln!("We found the correct unit group and the class group. Stopping.");
+            break;
         }
     }
-    let reg = determinant_real(&matrix);
-    eprintln!(
-        "tentative Reg(K) = {}, Cl(K) = {}, prod = {}",
-        reg,
-        cl,
-        reg * cl.to_f64().unwrap(),
-    );
 }
