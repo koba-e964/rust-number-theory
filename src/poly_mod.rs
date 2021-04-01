@@ -50,6 +50,7 @@ fn find_linear_factors_impl<
     }
     let a = rng.gen_range(Int::zero()..p.clone());
     debug_assert!(modpow(&a, &p, &p) == a);
+    let poly_orig = poly;
     let mut poly = poly.clone();
     if poly_of_mod(&poly, &a, &p) == Int::zero() {
         poly = divide_by_x_a(&poly, &a, &p);
@@ -76,9 +77,14 @@ fn find_linear_factors_impl<
     }
     let gcd = poly_gcd(&xapowm1, &poly, &p);
     if gcd.deg() > 0 {
-        find_linear_factors_impl(&gcd, p, result, rng);
+        let (quo, _) = poly_divrem(&poly, &gcd, &p);
+        find_linear_factors_impl(&gcd, p.clone(), result, rng);
+        poly = quo;
     }
-    // Since poly has no linear factors, we can simply discard poly.
+    // If poly == poly_orig, Since poly has no linear factors, we can simply discard poly.
+    if poly_orig != &poly {
+        find_linear_factors_impl(&poly, p, result, rng);
+    }
 }
 
 fn find_linear_factors_impl_mod2<Int: Clone + Integer + NumAssign>(
@@ -262,6 +268,15 @@ mod tests {
         let mut factors = find_linear_factors::<i64>(&poly, p);
         factors.sort_unstable();
         assert_eq!(factors, vec![15570, 20660, 69738]);
+    }
+
+    #[test]
+    fn find_linear_factors_with_multiplicity_1() {
+        // X^2 mod 23
+        let poly: Polynomial<i32> = Polynomial::from_raw(vec![0, 0, 1]);
+        let p = 23;
+        let factors = find_linear_factors::<i32>(&poly, p);
+        assert_eq!(factors, vec![0, 0]);
     }
 
     #[test]

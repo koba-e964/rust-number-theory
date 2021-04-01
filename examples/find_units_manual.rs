@@ -31,14 +31,14 @@ fn factor_prime<'mul>(
     let pow_basis = Order::singly_gen(theta);
     let index = order::index(o, &pow_basis);
     if (index % p).is_zero() {
-        // Ad-hoc factorization: if poly.deg() == 2 and poly = x^2 - a for a odd, we know (2) splits or is inert, depending on a mod 4.
+        // Ad-hoc factorization: if poly.deg() == 2 and poly = x^2 - a for a mod 4  == 1, we know (2) splits or is inert, depending on a mod 8.
         if p == &BigInt::from(2)
             && poly.coef_at(1) == 0.into()
             && poly.coef_at(2) == 1.into()
-            && poly.coef_at(0).is_odd()
+            && poly.coef_at(0).mod_floor(&BigInt::from(4)) == 3.into()
         {
             let a = -poly.coef_at(0).clone();
-            let rem = a.mod_floor(&BigInt::from(4));
+            let rem = a.mod_floor(&BigInt::from(8));
             // (2)
             let mut pnum = vec![BigInt::zero(); deg];
             pnum[0] = BigInt::from(2);
@@ -129,6 +129,19 @@ fn factorize_with_known_primes<'mul>(
                 fsum += f;
             }
         }
+        if p == &7.into() && e > 0 {
+            eprintln!(
+                "fsum = {}, e = {}, rem = {}, dividing = {:?}",
+                fsum, e, remaining, dividing
+            );
+        }
+        if e == 0 {
+            assert_eq!(
+                fsum, 0,
+                "fsum = {}, e = {}, rem = {}, dividing = {:?}",
+                fsum, e, remaining, dividing
+            );
+        }
         if fsum == e {
             // Each prime ideal divides num exactly once.
             for (_, idx) in dividing {
@@ -143,8 +156,11 @@ fn factorize_with_known_primes<'mul>(
             return None;
         }
     }
+    eprintln!(
+        "num = {:?}, norm = {}, factors = {:?}, rem = {}",
+        num, norm, factors, remaining
+    );
     if remaining.pow(2).is_one() {
-        eprintln!("num = {:?}, norm = {}, factors = {:?}", num, norm, factors);
         Some(factors)
     } else {
         None
@@ -155,6 +171,9 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
     let mut ans = 1.0;
     for &p in primes {
         let big_p = BigInt::from(p);
+        if !map.contains_key(&big_p) {
+            eprintln!("error!! p = {}", p);
+        }
         let on_p = &map[&big_p];
         let pinv = 1.0 / p as f64;
         for &(_, f) in on_p {
@@ -172,7 +191,7 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
 fn main() {
     let mut rng = rand::thread_rng();
 
-    let poly_vec: Vec<BigInt> = vec![(-41).into(), 0.into(), 1.into()];
+    let poly_vec: Vec<BigInt> = vec![(-229).into(), 0.into(), 1.into()];
     let muk = 2; // TODO: compute
     let poly = Polynomial::from_raw(poly_vec.clone());
     let poly_complex =
@@ -182,7 +201,7 @@ fn main() {
     let o = find_integral_basis(&theta);
     eprintln!("o = {:?}", o);
     let mult_table = o.get_mult_table(&theta);
-    let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 43];
+    let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];
     let mut map = HashMap::new();
     let mut offsets = HashMap::new();
     let mut offset = 0;
@@ -198,8 +217,26 @@ fn main() {
     let w = offset;
     let mut rows = vec![];
     let mut nums = vec![];
+    // First process rational primes so that every prime appears at least once
+    for &p in &primes {
+        let num: Vec<BigInt> = vec![p.into(), 0.into()];
+        if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
+            eprintln!("prime p = {}", p);
+            let mut row = vec![BigInt::zero(); w];
+            for (p, idx) in factors {
+                let offset = offsets[&p];
+                row[offset + idx] += 1;
+            }
+            eprintln!("row = {:?}, num = {:?}", row, num);
+            rows.push(row);
+            nums.push(num);
+        }
+    }
     for a in 0..30 {
         for b in -10..10 {
+            if b == 0 {
+                continue;
+            }
             let num: Vec<BigInt> = vec![a.into(), b.into()];
             if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
                 let mut row = vec![BigInt::zero(); w];
@@ -329,6 +366,10 @@ fn main() {
         eprintln!("a = {}", a);
         if product > 0.707 * a && product < 1.414 * a {
             eprintln!("We found the correct unit group and the class group. Stopping.");
+            eprintln!("generators:");
+            for i in 0..r + s - 1 {
+                eprintln!("{:?}", unit_cand[perm[i]]);
+            }
             break;
         }
     }
