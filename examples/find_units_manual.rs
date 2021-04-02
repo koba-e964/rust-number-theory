@@ -188,6 +188,11 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
     1.0 / ans
 }
 
+// TODOs:
+// Compute mu_K
+// Use Minkowski bounds to enumerate primes
+// Incrementally enumerate relations
+// Factorize all primes
 fn main() {
     let mut rng = rand::thread_rng();
 
