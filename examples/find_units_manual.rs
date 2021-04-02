@@ -1,4 +1,4 @@
-#![allow(clippy::needless_range_loop)]
+#![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
 
 use num::{bigint::Sign, BigInt, BigRational, Complex, Integer, One, ToPrimitive, Zero};
 use number_theory_linear::determinant_real;
@@ -37,7 +37,7 @@ fn factor_prime<'mul>(
             && poly.coef_at(2) == 1.into()
             && poly.coef_at(0).mod_floor(&BigInt::from(4)) == 3.into()
         {
-            let a = -poly.coef_at(0).clone();
+            let a = -poly.coef_at(0);
             let rem = a.mod_floor(&BigInt::from(8));
             // (2)
             let mut pnum = vec![BigInt::zero(); deg];
@@ -66,7 +66,7 @@ fn factor_prime<'mul>(
     }
     let mut factors = find_linear_factors::<BigInt>(poly, p.clone());
     // ad-hoc factorization: if poly.deg() == 2 and there are no linear factors, we know that poly is irreducible.
-    if factors.len() == 0 && poly.deg() == 2 {
+    if factors.is_empty() && poly.deg() == 2 {
         // (p)
         let mut pnum = vec![BigInt::zero(); deg];
         pnum[0] = p.clone();
@@ -303,7 +303,7 @@ fn main() {
         eprintln!("res = {:?}", res);
         unit_cand.push(res);
     }
-    let (roots_re, roots_im) = find_roots_reim(poly_complex.clone());
+    let (roots_re, roots_im) = find_roots_reim(poly_complex);
     let r = roots_re.len();
     let s = roots_im.len();
     let mut basis = vec![vec![Complex::new(0.0, 0.0); deg]; r + s];
