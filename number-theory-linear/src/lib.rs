@@ -3,6 +3,7 @@ mod determinant_real;
 mod gauss_elim;
 mod lll;
 
+pub mod cholesky;
 pub mod hnf;
 pub mod matrix;
 pub mod triangular;
