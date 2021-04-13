@@ -1,12 +1,13 @@
 #![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
 
-use num::{bigint::Sign, BigInt, BigRational, Complex, Integer, One, ToPrimitive, Zero};
-use number_theory_linear::cholesky::Cholesky;
+use num::{bigint::Sign, BigInt, BigRational, Integer, One, ToPrimitive, Zero};
+use number_theory_linear::determinant_real;
 use number_theory_linear::hnf::{self, HNF};
-use number_theory_linear::{determinant_real, lll};
 use rand::Rng;
 use rust_number_theory::{
     algebraic::Algebraic,
+    class::roots_of_unity::find_muk,
+    embeddings::CEmbeddings,
     ideal::Ideal,
     integral_basis::find_integral_basis,
     mult_table::MultTable,
@@ -189,83 +190,6 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
     1.0 / ans
 }
 
-struct CEmbeddings {
-    basis: Vec<Vec<Complex<f64>>>,
-}
-
-impl CEmbeddings {
-    fn new(roots_re: &[f64], roots_im: &[Complex<f64>], o: &Order) -> Self {
-        let r = roots_re.len();
-        let s = roots_im.len();
-        let deg = r + 2 * s;
-        let mut basis = vec![vec![Complex::new(0.0, 0.0); deg]; r + s];
-        for i in 0..r + s {
-            let root = if i < r {
-                roots_re[i].into()
-            } else {
-                roots_im[i]
-            };
-            for j in 0..deg {
-                let mut current = Complex::new(1.0, 0.0);
-                for k in 0..deg {
-                    basis[i][j] += o.basis[j][k].to_f64().unwrap() * current;
-                    current *= root;
-                }
-            }
-            eprintln!("root = {}, basis = {:?}", root, basis[i]);
-        }
-        Self { basis }
-    }
-    fn deg(&self) -> usize {
-        self.basis[0].len()
-    }
-    fn compute(&self, idx: usize, num: &[BigInt]) -> Complex<f64> {
-        let mut val = Complex::new(0.0, 0.0);
-        let deg = self.deg();
-        for k in 0..deg {
-            val += self.basis[idx][k] * num[k].to_f64().unwrap();
-        }
-        val
-    }
-    fn get(&self, idx: usize, k: usize) -> Complex<f64> {
-        self.basis[idx][k]
-    }
-}
-
-fn find_muk(emb: &CEmbeddings, r: usize, s: usize) -> usize {
-    let n = r + 2 * s;
-    let mut basis = vec![vec![0.0; n]; n];
-    for i in 0..r {
-        for j in 0..n {
-            let val = emb.get(i, j);
-            basis[j][i] = val.re;
-        }
-    }
-    let sqrt2 = 2.0f64.sqrt();
-    for i in 0..s {
-        for j in 0..n {
-            let val = emb.get(i, j);
-            basis[j][r + 2 * i] = val.re * sqrt2;
-            basis[j][r + 2 * i + 1] = val.im * sqrt2;
-        }
-    }
-    let (lll, _h) = lll(&basis);
-    eprintln!("lll = {:?}", lll);
-    let mut q = vec![vec![0.0; n]; n];
-    for i in 0..n {
-        for j in 0..n {
-            for k in 0..n {
-                q[i][j] += lll[i][k] * lll[j][k];
-            }
-        }
-    }
-    eprintln!("q = {:?}", q);
-    let cho = Cholesky::find(&q);
-    let vecs = cho.find_short_vectors(n as f64 + 0.0625);
-    eprintln!("vecs = {:?}", vecs);
-    2 * vecs.len()
-}
-
 // TODOs:
 // Use Minkowski bounds to enumerate primes
 // Incrementally enumerate relations
@@ -287,7 +211,7 @@ fn main() {
     let r = roots_re.len();
     let s = roots_im.len();
     let basis = CEmbeddings::new(&roots_re, &roots_im, &o);
-    let muk = find_muk(&basis, r, s);
+    let muk = find_muk(&basis);
 
     let mult_table = o.get_mult_table(&theta);
     let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];

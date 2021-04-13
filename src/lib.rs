@@ -1,8 +1,10 @@
 #![allow(clippy::suspicious_arithmetic_impl)]
 
 pub mod algebraic;
+pub mod class;
 pub mod discriminant;
 pub mod ecm;
+pub mod embeddings;
 pub mod factorize;
 pub mod ideal;
 pub mod integral_basis;
