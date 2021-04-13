@@ -1,8 +1,10 @@
 mod determinant;
 mod determinant_real;
 mod gauss_elim;
+#[allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 mod lll;
 
+#[allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 pub mod cholesky;
 pub mod hnf;
 pub mod matrix;
