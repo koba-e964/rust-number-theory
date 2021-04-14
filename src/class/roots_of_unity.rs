@@ -1,9 +1,13 @@
 use crate::embeddings::CEmbeddings;
+use num::{BigInt, Zero};
 use number_theory_linear::cholesky::Cholesky;
 use number_theory_linear::lll;
 
-#[allow(clippy::needless_range_loop)]
 pub fn find_muk(emb: &CEmbeddings) -> usize {
+    find_muk_with_margin(emb, 0.0625)
+}
+#[allow(clippy::many_single_char_names, clippy::needless_range_loop)]
+fn find_muk_with_margin(emb: &CEmbeddings, margin: f64) -> usize {
     let r = emb.real();
     let s = emb.complex();
     let n = r + 2 * s;
@@ -22,7 +26,7 @@ pub fn find_muk(emb: &CEmbeddings) -> usize {
             basis[j][r + 2 * i + 1] = val.im * sqrt2;
         }
     }
-    let (lll, _h) = lll(&basis);
+    let (lll, h) = lll(&basis);
     let mut q = vec![vec![0.0; n]; n];
     for i in 0..n {
         for j in 0..n {
@@ -32,8 +36,29 @@ pub fn find_muk(emb: &CEmbeddings) -> usize {
         }
     }
     let cho = Cholesky::find(&q);
-    let vecs = cho.find_short_vectors(n as f64 + 0.0625);
-    2 * vecs.len()
+    let vecs = cho.find_short_vectors(n as f64 + margin);
+    let mut units = 0;
+    for (_sqdist, num) in vecs {
+        let num: Vec<BigInt> = num.into_iter().map(BigInt::from).collect();
+        let mut num_conv = vec![BigInt::zero(); n];
+        for i in 0..n {
+            for j in 0..n {
+                num_conv[j] += &num[i] * &h[i][j];
+            }
+        }
+        let mut ok = true;
+        for i in 0..r + s {
+            let val = emb.compute(i, &num_conv);
+            let sqnorm = val.norm_sqr();
+            if (sqnorm - 1.0).abs() >= 1e-9 {
+                ok = false;
+            }
+        }
+        if ok {
+            units += 1;
+        }
+    }
+    2 * units
 }
 
 #[cfg(test)]
@@ -43,7 +68,7 @@ mod tests {
     use crate::integral_basis::find_integral_basis;
     use crate::numerical_roots::find_roots_reim;
     use crate::polynomial::Polynomial;
-    use num::{BigInt, ToPrimitive};
+    use num::ToPrimitive;
 
     fn find_muk_from_polynomial(poly_vec: &[BigInt]) -> usize {
         let poly = Polynomial::from_raw(poly_vec.to_vec());
@@ -55,7 +80,7 @@ mod tests {
         // Find embeddings and roots of unity
         let (roots_re, roots_im) = find_roots_reim(poly_complex);
         let basis = CEmbeddings::new(&roots_re, &roots_im, &o);
-        find_muk(&basis)
+        find_muk_with_margin(&basis, 5.0)
     }
 
     #[test]
