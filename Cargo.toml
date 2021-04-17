@@ -22,3 +22,7 @@ features = ["derive"]
 [dependencies.number-theory-linear]
 version = "0.1"
 path = "./number-theory-linear"
+
+[dependencies.number-theory-elementary]
+version = "0.1"
+path = "./number-theory-elementary"

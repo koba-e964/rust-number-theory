@@ -1,6 +1,7 @@
 #![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
 
 use num::{bigint::Sign, BigInt, BigRational, Integer, One, ToPrimitive, Zero};
+use number_theory_elementary::primes;
 use number_theory_linear::determinant_real;
 use number_theory_linear::hnf::{self, HNF};
 use rand::Rng;
@@ -114,7 +115,7 @@ fn factorize_with_known_primes<'mul>(
     if norm.is_zero() {
         return None;
     }
-    let mut remaining = norm.clone();
+    let mut remaining = norm;
     let mut factors = vec![];
     for (p, ps) in map {
         let mut e = 0;
@@ -130,12 +131,6 @@ fn factorize_with_known_primes<'mul>(
                 dividing.push((pideal.clone(), i));
                 fsum += f;
             }
-        }
-        if p == &7.into() && e > 0 {
-            eprintln!(
-                "fsum = {}, e = {}, rem = {}, dividing = {:?}",
-                fsum, e, remaining, dividing
-            );
         }
         if e == 0 {
             assert_eq!(
@@ -158,10 +153,6 @@ fn factorize_with_known_primes<'mul>(
             return None;
         }
     }
-    eprintln!(
-        "num = {:?}, norm = {}, factors = {:?}, rem = {}",
-        num, norm, factors, remaining
-    );
     if remaining.pow(2).is_one() {
         Some(factors)
     } else {
@@ -197,7 +188,7 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
 fn main() {
     let mut rng = rand::thread_rng();
 
-    let poly_vec: Vec<BigInt> = vec![(-229).into(), 0.into(), 1.into()];
+    let poly_vec: Vec<BigInt> = vec![(-1141).into(), 1.into(), 1.into()];
     let poly = Polynomial::from_raw(poly_vec.clone());
     let poly_complex =
         Polynomial::from_raw(poly_vec.into_iter().map(|b| b.to_f64().unwrap()).collect());
@@ -205,6 +196,13 @@ fn main() {
     let theta = Algebraic::new(poly.clone());
     let o = find_integral_basis(&theta);
     eprintln!("o = {:?}", o);
+
+    // Find a suitable bound
+    let disc = o.discriminant(&theta);
+    let disc_ln = disc.to_f64().unwrap().abs().ln();
+    let coef = 1.0;
+    let bound = coef * disc_ln * disc_ln;
+    eprintln!("bound = {}", bound);
 
     // Find embeddings and roots of unity
     let (roots_re, roots_im) = find_roots_reim(poly_complex);
@@ -214,7 +212,10 @@ fn main() {
     let muk = find_muk(&basis);
 
     let mult_table = o.get_mult_table(&theta);
-    let primes = vec![2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];
+    let primes: Vec<i32> = primes(bound.floor() as usize)
+        .into_iter()
+        .map(|x| x as i32)
+        .collect();
     let mut map = HashMap::new();
     let mut offsets = HashMap::new();
     let mut offset = 0;
@@ -240,7 +241,6 @@ fn main() {
                 let offset = offsets[&p];
                 row[offset + idx] += 1;
             }
-            eprintln!("row = {:?}, num = {:?}", row, num);
             rows.push(row);
             nums.push(num);
         }
@@ -257,7 +257,6 @@ fn main() {
                     let offset = offsets[&p];
                     row[offset + idx] += 1;
                 }
-                eprintln!("row = {:?}, num = {:?}", row, num);
                 rows.push(row);
                 nums.push(num);
             }
@@ -270,7 +269,6 @@ fn main() {
     eprintln!("tentative Cl(K) = {}", cl);
     let mut unseen: HashSet<usize> = (0..w).collect();
     for p in &principal.0 {
-        eprintln!("{:?}", p);
         for i in 0..w {
             if !p[i].is_zero() {
                 unseen.remove(&i);
@@ -313,7 +311,6 @@ fn main() {
             assert_eq!(&res[i] % &denden, BigInt::zero());
             res[i] /= &denden;
         }
-        eprintln!("res = {:?}", res);
         unit_cand.push(res);
     }
     let mut lnmatrix = vec![];
@@ -325,7 +322,6 @@ fn main() {
             let ln = val.norm_sqr().ln() / 2.0;
             lnvec.push(ln);
         }
-        eprintln!("num = {:?}, ln = {:?}", num, lnvec);
         lnmatrix.push(lnvec);
     }
     loop {
