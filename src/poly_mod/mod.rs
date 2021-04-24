@@ -1,3 +1,4 @@
+mod factorize;
 mod linear;
 mod prim;
 

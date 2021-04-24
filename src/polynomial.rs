@@ -1,6 +1,6 @@
 extern crate num;
 
-use num::{pow, BigInt, BigRational, Complex, One, Zero};
+use num::{pow, traits::NumAssign, BigInt, BigRational, Complex, Integer, One, Zero};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -52,8 +52,8 @@ impl<R: Zero + Clone> Polynomial<R> {
     }
 }
 
-impl Polynomial<BigInt> {
-    pub fn differential(&self) -> Polynomial<BigInt> {
+impl<Int: Clone + NumAssign + Integer + From<i32>> Polynomial<Int> {
+    pub fn differential(&self) -> Polynomial<Int> {
         if self.is_zero_primitive() {
             return self.clone();
         }
@@ -61,14 +61,15 @@ impl Polynomial<BigInt> {
         let mut tmp = vec![0.into(); deg];
         #[allow(clippy::needless_range_loop)]
         for i in 0..deg {
-            tmp[i] = &self.dat[i + 1] * (i + 1);
+            tmp[i] = self.dat[i + 1].clone();
+            tmp[i] *= Int::from(i as i32 + 1);
         }
         Polynomial::from_raw(tmp)
     }
 }
 
 impl Polynomial<Complex<f64>> {
-    pub fn differential(&self) -> Polynomial<Complex<f64>> {
+    pub fn differential_complex(&self) -> Polynomial<Complex<f64>> {
         if self.is_zero_primitive() {
             return self.clone();
         }

@@ -24,6 +24,18 @@ pub fn modinv<Int: Clone + Integer>(x: &Int, p: &Int) -> Int {
     modpow(x, &(p.clone() - two), p)
 }
 
+// Very few type implements From<usize>. From<i32> is much more convenient.
+pub fn differential<Int: Clone + NumAssign + Integer + From<i32>>(
+    f: &Polynomial<Int>,
+    p: &Int,
+) -> Polynomial<Int> {
+    if f.is_zero() {
+        return Polynomial::zero();
+    }
+    let f = f.differential();
+    poly_mod(&f, p)
+}
+
 pub fn poly_of_mod<Int: Clone + NumAssign + Integer>(f: &Polynomial<Int>, a: &Int, p: &Int) -> Int {
     let mut sum = Int::zero();
     let deg = f.deg();

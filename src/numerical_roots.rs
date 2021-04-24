@@ -13,7 +13,7 @@ pub fn find_roots_reim(poly: Polynomial<f64>) -> (Vec<f64>, Vec<Complex<f64>>) {
     let mut rng = rand::thread_rng();
     let mut trial = 3;
     while poly.deg() > 0 && trial > 0 {
-        let der = poly.differential();
+        let der = poly.differential_complex();
         let r = rng.gen_range(0.0..2.0);
         let theta = rng.gen_range(0.0..std::f64::consts::PI);
         let x = Complex::from_polar(r, theta);
@@ -39,7 +39,7 @@ pub fn find_roots(mut poly: Polynomial<Complex<f64>>) -> Vec<Complex<f64>> {
     let mut rng = rand::thread_rng();
     let mut trial = 3;
     while poly.deg() > 0 && trial > 0 {
-        let der = poly.differential();
+        let der = poly.differential_complex();
         let r = rng.gen_range(0.0..2.0);
         let theta = rng.gen_range(0.0..std::f64::consts::PI);
         let x = Complex::from_polar(r, theta);
