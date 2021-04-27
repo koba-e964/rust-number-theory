@@ -1,6 +1,7 @@
 #![allow(clippy::needless_range_loop)]
 use num::traits::{NumAssign, NumOps, Zero};
 use num::Integer;
+use std::ops::Neg;
 
 use crate::polynomial::Polynomial;
 
@@ -129,6 +130,14 @@ where
         return b.clone();
     }
     poly_gcd(b, &rem, p)
+}
+
+pub fn poly_mod_sub<Int: Clone + NumAssign + Integer + Neg<Output = Int>>(
+    a: &Polynomial<Int>,
+    b: &Polynomial<Int>,
+    p: &Int,
+) -> Polynomial<Int> {
+    poly_mod(&(a - b), p)
 }
 
 pub fn divide_by_x_a<Int: Clone + NumAssign + Integer>(
