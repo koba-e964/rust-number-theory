@@ -79,7 +79,7 @@ pub fn poly_mod<Int: Clone + NumAssign + Integer>(f: &Polynomial<Int>, p: &Int) 
     }
     let mut raw = vec![Int::zero(); deg + 1];
     for i in 0..deg + 1 {
-        raw[i] = f.coef_at(i) % p.clone();
+        raw[i] = f.coef_at(i).mod_floor(p);
     }
     Polynomial::from_raw(raw)
 }

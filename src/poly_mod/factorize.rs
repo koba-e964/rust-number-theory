@@ -1,4 +1,4 @@
-#![allow(clippy::many_single_char_names, clippy::needless_range_loop, unused)]
+#![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 use num::traits::{Num, NumAssign, NumOps, Zero};
 use num::Integer;
 use rand::distributions::uniform::SampleUniform;
@@ -6,14 +6,43 @@ use rand::{thread_rng, Rng};
 use std::ops::Neg;
 
 use crate::poly_mod::prim::{
-    differential, divide_by_x_a, modinv, modpow, poly_divrem, poly_gcd, poly_mod, poly_mod_sub,
-    poly_modpow, poly_of_mod,
+    differential, modinv, poly_divrem, poly_gcd, poly_mod, poly_mod_sub, poly_modpow,
 };
 use crate::polynomial::Polynomial;
 
+pub fn factorize_mod_p<
+    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
+>(
+    poly: &Polynomial<Int>,
+    p: &Int,
+    pusize: usize,
+) -> Vec<(Polynomial<Int>, usize)>
+where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let sqfree = squarefree(poly, p, pusize);
+    let mut result = vec![];
+    for (sqfree, e) in sqfree {
+        let degrees = degree(&sqfree, p);
+        for (prod, d) in degrees {
+            if prod.deg() == 0 {
+                continue;
+            }
+            let spl = final_split(&prod, p, d);
+            for factor in spl {
+                assert_eq!(factor.deg(), d);
+                let leading = factor.coef_at(d);
+                let factor = poly_mod(&(&factor * &Polynomial::from_mono(modinv(&leading, p))), p);
+                result.push((factor, e));
+            }
+        }
+    }
+    result
+}
+
 /// If p is very large (so that p does not fit in usize), the parameter pusize is ignored.
 /// In that case, the caller can pass any value.
-pub fn squarefree<Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32>>(
+fn squarefree<Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32>>(
     poly: &Polynomial<Int>,
     p: &Int,
     pusize: usize,
@@ -193,6 +222,24 @@ fn final_split_2<Int: Clone + Integer + NumAssign + Num>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn factorize_mod_p_test_1() {
+        let p = 3;
+        let mut raw = vec![0; 27];
+        raw[0] = 2;
+        raw[26] = 1;
+        let poly = Polynomial::from_raw(raw);
+        let factors = factorize_mod_p::<i64>(&poly, &p, 3);
+        eprintln!("factors = {:?}", factors);
+        let mut prod: Polynomial<i64> = Polynomial::from_mono(1);
+        for (factor, d) in factors {
+            for _ in 0..d {
+                prod = poly_mod::<i64>(&(prod * factor.clone()), &p);
+            }
+        }
+        assert_eq!(poly, prod);
+    }
 
     // asserts a = c * b for some c in F(p)^\times.
     fn assert_associate(a: &Polynomial<i64>, b: &Polynomial<i64>, p: i64) {
