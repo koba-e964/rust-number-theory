@@ -231,7 +231,21 @@ mod tests {
         raw[26] = 1;
         let poly = Polynomial::from_raw(raw);
         let factors = factorize_mod_p::<i64>(&poly, &p, 3);
-        eprintln!("factors = {:?}", factors);
+        let mut prod: Polynomial<i64> = Polynomial::from_mono(1);
+        for (factor, d) in factors {
+            for _ in 0..d {
+                prod = poly_mod::<i64>(&(prod * factor.clone()), &p);
+            }
+        }
+        assert_eq!(poly, prod);
+    }
+
+    #[test]
+    fn factorize_mod_p_test_2() {
+        let p = 3;
+        let raw = vec![0, 0, 1, 0, 1];
+        let poly = Polynomial::from_raw(raw);
+        let factors = factorize_mod_p::<i64>(&poly, &p, 3);
         let mut prod: Polynomial<i64> = Polynomial::from_mono(1);
         for (factor, d) in factors {
             for _ in 0..d {
