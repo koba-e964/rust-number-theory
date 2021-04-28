@@ -87,6 +87,109 @@ where
     result
 }
 
+fn final_split<
+    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
+>(
+    poly: &Polynomial<Int>,
+    p: &Int,
+    d: usize,
+) -> Vec<Polynomial<Int>>
+where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let mut result = vec![];
+    if p.is_odd() {
+        let mut rng = thread_rng();
+        final_split_odd(poly, p, d, &mut result, &mut rng);
+    } else {
+        final_split_2(poly, d, &mut result);
+    }
+    result
+}
+
+fn final_split_odd<
+    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
+>(
+    poly: &Polynomial<Int>,
+    p: &Int,
+    d: usize,
+    result: &mut Vec<Polynomial<Int>>,
+    rng: &mut impl Rng,
+) where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let k = poly.deg() / d;
+    if k == 0 {
+        unreachable!();
+    }
+    if k == 1 {
+        result.push(poly.clone());
+        return;
+    }
+    loop {
+        let mut poly_raw = vec![Int::zero(); 2 * d];
+        for i in 0..2 * d {
+            poly_raw[i] = rng.gen_range(Int::zero()..p.clone());
+        }
+        let t = Polynomial::from_raw(poly_raw);
+        // Iterating O(d) times to create p^d is okay:
+        // we need O(d) computation to handle poly anyway.
+        let mut e = Int::one();
+        for _ in 0..d {
+            e *= p.clone();
+        }
+        e -= Int::one();
+        e /= Int::one() + Int::one();
+        let mut tpow = poly_modpow(&t, &e, poly, p);
+        tpow = poly_mod_sub(&tpow, &Polynomial::from_mono(Int::one()), p);
+        let b = poly_gcd(&tpow, poly, p);
+        if b.is_zero() || b.deg() == 0 || b.deg() == poly.deg() {
+            continue;
+        }
+        final_split_odd(&b, p, d, result, rng);
+        let div = poly_divrem(poly, &b, p).0;
+        final_split_odd(&div, p, d, result, rng);
+        return;
+    }
+}
+
+fn final_split_2<Int: Clone + Integer + NumAssign + Num>(
+    poly: &Polynomial<Int>,
+    d: usize,
+    result: &mut Vec<Polynomial<Int>>,
+) where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let two = Int::one() + Int::one();
+    let k = poly.deg() / d;
+    if k == 0 {
+        unreachable!();
+    }
+    if k == 1 {
+        result.push(poly.clone());
+        return;
+    }
+    let mut t = Polynomial::from_raw(vec![Int::zero(), Int::one()]);
+    let x2 = Polynomial::from_raw(vec![Int::zero(), Int::zero(), Int::one()]);
+    loop {
+        let mut c = t.clone();
+        for _ in 0..d - 1 {
+            c = &(&c * &c) + &t;
+            c = poly_mod(&c, &two);
+            c = poly_divrem(&c, &poly, &two).1;
+        }
+        let b = poly_gcd(poly, &c, &two);
+        if b.deg() == 0 || b.deg() == poly.deg() {
+            t = &t * &x2;
+            continue;
+        }
+        final_split_2(&b, d, result);
+        let div = poly_divrem(poly, &b, &two).0;
+        final_split_2(&div, d, result);
+        return;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +279,41 @@ mod tests {
         assert_associate(&result[0].0, &Polynomial::from_raw(vec![1, 1]), p);
         assert_eq!(result[1].1, 2);
         assert_associate(&result[1].0, &Polynomial::from_raw(vec![1, 0, 0, 0, 1]), p);
+    }
+
+    #[test]
+    fn final_split_odd_test_1() {
+        let p = 3;
+        let poly = Polynomial::from_raw(vec![2, 0, 1]);
+        // 2+x^2=(1+x)(2+x)
+        let result = final_split::<i64>(&poly, &p, 1);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn final_split_odd_test_2() {
+        let p = 3;
+        let poly = Polynomial::from_raw(vec![0, 2, 0, 1]);
+        // 2x+x^3=x(1+x)(2+x)
+        let result = final_split::<i64>(&poly, &p, 1);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn final_split_odd_test_3() {
+        let p = 3;
+        let poly = Polynomial::from_raw(vec![1, 0, 0, 0, 1]);
+        // 1+x^4=(2+x+x^2)(2+2x+x^2)
+        let result = final_split::<i64>(&poly, &p, 2);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    fn final_split_2_test_1() {
+        let p = 2;
+        let poly = Polynomial::from_raw(vec![1, 1, 1, 1, 1, 1, 1]);
+        // 1 + x + ... + x^6 = (1+x+x^3)(1+x^2+x^3)
+        let result = final_split::<i64>(&poly, &p, 3);
+        assert_eq!(result.len(), 2);
     }
 }
