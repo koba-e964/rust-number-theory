@@ -14,7 +14,8 @@ use rust_number_theory::{
     mult_table::MultTable,
     numerical_roots::find_roots_reim,
     order::{self, Order},
-    poly_mod::find_linear_factors,
+    poly_mod::factorize_mod_p,
+    polynomial::div_rem_bigrational,
     polynomial::Polynomial,
 };
 use std::collections::{HashMap, HashSet};
@@ -23,6 +24,7 @@ use std::collections::{HashMap, HashSet};
 type PrimeIdeal<'mul> = (Ideal<'mul>, usize);
 
 // Returns the factorization of (p). If this function fails to compute it, this function returns None.
+// If some prime ideals ramify, these prime ideals appear only once.
 fn factor_prime<'mul>(
     p: &BigInt,
     poly: &Polynomial<BigInt>,
@@ -67,41 +69,31 @@ fn factor_prime<'mul>(
         }
         return None;
     }
-    let mut factors = find_linear_factors::<BigInt>(poly, p.clone());
-    // ad-hoc factorization: if poly.deg() == 2 and there are no linear factors, we know that poly is irreducible.
-    if factors.is_empty() && poly.deg() == 2 {
-        // (p)
-        let mut pnum = vec![BigInt::zero(); deg];
-        pnum[0] = p.clone();
-        let ideal = Ideal::principal(&pnum, mult_table);
-        return Some(vec![(ideal, 2)]);
-    }
-    if factors.len() != poly.deg() {
-        return None;
-    }
-    factors.sort();
-    factors.dedup();
+    let factors = factorize_mod_p::<BigInt>(poly, &p.clone(), p.to_usize().unwrap_or(0));
     let mut ideals = vec![];
-    for a in factors {
-        // (p, theta - a)
+    for (a, e) in factors {
+        fn convert(a: Polynomial<BigInt>) -> Polynomial<BigRational> {
+            Polynomial::from_raw(a.dat.into_iter().map(BigRational::from).collect())
+        }
+        let a = convert(a);
+        let adeg = a.deg();
+        let a = div_rem_bigrational(&a, &convert(theta.min_poly.clone())).1;
         let mut pnum = vec![BigInt::zero(); deg];
         pnum[0] = p.clone();
         let ideal = Ideal::principal(&pnum, mult_table);
-        let theta_a = Algebraic::with_expr(
-            theta.min_poly.clone(),
-            Polynomial::from_raw(vec![-BigRational::from(a.clone()), BigInt::one().into()]),
-        );
+        let theta_a = Algebraic::with_expr(theta.min_poly.clone(), a.clone());
         let theta_a = o.to_z_basis_int(&theta_a);
         let ideal = &ideal + &Ideal::principal(&theta_a, mult_table);
         eprintln!(
-            "p = {}, a = {}, theta_a = {:?}, ideal = {:?} (norm= {})",
+            "p = {}, a = {}, e = {}, theta_a = {:?}, ideal = {:?} (norm= {})",
             p,
             a,
+            e,
             theta_a,
             ideal,
             ideal.norm(),
         );
-        ideals.push((ideal, 1));
+        ideals.push((ideal, adeg));
     }
     Some(ideals)
 }
@@ -145,7 +137,7 @@ fn factorize_with_known_primes<'mul>(
                 factors.push((p.clone(), idx));
             }
         } else if dividing.len() == 1 {
-            // Only one prime ideal on (p) divides num. (num) = (that prime ideal)^e.
+            // Only one prime ideal on (p) divides num. (num) = (that prime ideal)^(e/fsum).
             for _ in 0..e / fsum {
                 factors.push((p.clone(), dividing[0].1));
             }
@@ -182,7 +174,6 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
 }
 
 // TODOs:
-// Use Minkowski bounds to enumerate primes
 // Incrementally enumerate relations
 // Factorize all primes
 fn main() {
@@ -200,7 +191,7 @@ fn main() {
     // Find a suitable bound
     let disc = o.discriminant(&theta);
     let disc_ln = disc.to_f64().unwrap().abs().ln();
-    let coef = 1.0;
+    let coef = 2.0;
     let bound = coef * disc_ln * disc_ln;
     eprintln!("bound = {}", bound);
 

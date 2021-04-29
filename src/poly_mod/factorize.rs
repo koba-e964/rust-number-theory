@@ -20,7 +20,8 @@ pub fn factorize_mod_p<
 where
     for<'a> &'a Int: NumOps<&'a Int, Int>,
 {
-    let sqfree = squarefree(poly, p, pusize);
+    let poly = poly_mod(poly, p);
+    let sqfree = squarefree(&poly, p, pusize);
     let mut result = vec![];
     for (sqfree, e) in sqfree {
         let degrees = degree(&sqfree, p);
