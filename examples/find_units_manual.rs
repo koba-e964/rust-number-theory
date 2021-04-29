@@ -179,7 +179,7 @@ fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>
 fn main() {
     let mut rng = rand::thread_rng();
 
-    let poly_vec: Vec<BigInt> = vec![(-1141).into(), 1.into(), 1.into()];
+    let poly_vec: Vec<BigInt> = vec![(-7).into(), 0.into(), 0.into(), 1.into()];
     let poly = Polynomial::from_raw(poly_vec.clone());
     let poly_complex =
         Polynomial::from_raw(poly_vec.into_iter().map(|b| b.to_f64().unwrap()).collect());
@@ -199,8 +199,10 @@ fn main() {
     let (roots_re, roots_im) = find_roots_reim(poly_complex);
     let r = roots_re.len();
     let s = roots_im.len();
+    eprintln!("roots = {:?}, {:?}", roots_re, roots_im);
     let basis = CEmbeddings::new(&roots_re, &roots_im, &o);
     let muk = find_muk(&basis);
+    eprintln!("muk = {}", muk);
 
     let mult_table = o.get_mult_table(&theta);
     let primes: Vec<i32> = primes(bound.floor() as usize)
@@ -224,7 +226,8 @@ fn main() {
     let mut nums = vec![];
     // First process rational primes so that every prime appears at least once
     for &p in &primes {
-        let num: Vec<BigInt> = vec![p.into(), 0.into()];
+        let mut num: Vec<BigInt> = vec![0.into(); deg];
+        num[0] = p.into();
         if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
             eprintln!("prime p = {}", p);
             let mut row = vec![BigInt::zero(); w];
@@ -237,11 +240,14 @@ fn main() {
         }
     }
     for a in 0..30 {
+        eprintln!("a = {}", a);
         for b in -10..10 {
             if b == 0 {
                 continue;
             }
-            let num: Vec<BigInt> = vec![a.into(), b.into()];
+            let mut num: Vec<BigInt> = vec![0.into(); deg];
+            num[0] = a.into();
+            num[1] = b.into();
             if let Some(factors) = factorize_with_known_primes(&num, &map, &mult_table) {
                 let mut row = vec![BigInt::zero(); w];
                 for (p, idx) in factors {
