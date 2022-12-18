@@ -1,0 +1,8 @@
+# Factorize 1000000016000000063.
+# To feed this file to the executable, run `cargo run data/input-factorization.toml'.
+to_find = [
+    "factorization",
+]
+
+[input]
+integer = "1000000016000000063"

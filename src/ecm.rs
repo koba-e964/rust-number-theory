@@ -33,7 +33,7 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
             },
         );
         let other = &now / &fac;
-        stack.push(now);
+        stack.push(fac);
         stack.push(other);
     }
     let mut result: Vec<(BigInt, u64)> = map.into_iter().collect();

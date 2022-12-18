@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use rust_number_theory::algebraic::Algebraic;
 use rust_number_theory::discriminant;
+use rust_number_theory::ecm;
 use rust_number_theory::integral_basis;
 use rust_number_theory::order;
 use rust_number_theory::polynomial::Polynomial;
@@ -21,6 +22,7 @@ struct InputConfig {
 #[serde(rename_all = "lowercase")]
 enum Input {
     Polynomials(Vec<Vec<BigIntBridge>>),
+    Integer(BigIntBridge),
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -75,6 +77,10 @@ fn main() {
         if to_find == "resultant" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
+                Input::Integer(_) => {
+                    eprintln!("resultant accepts polynomials only");
+                    continue;
+                }
             };
             let p = polynomial_unbridge(polys[0].clone());
             let q = polynomial_unbridge(polys[1].clone());
@@ -82,20 +88,30 @@ fn main() {
             let mut result = HashMap::new();
             result.insert("resultant", res.to_string());
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            continue;
         }
         if to_find == "discriminant" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
+                Input::Integer(_) => {
+                    eprintln!("resultant accepts polynomials only");
+                    continue;
+                }
             };
             let p = polynomial_unbridge(polys[0].clone());
             let disc = discriminant::discriminant(&p);
             let mut result = HashMap::new();
             result.insert("discriminant", disc.to_string());
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            continue;
         }
         if to_find == "integral_basis" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
+                Input::Integer(_) => {
+                    eprintln!("resultant accepts polynomials only");
+                    continue;
+                }
             };
             let p = polynomial_unbridge(polys[0].clone());
             let theta = Algebraic::new(p);
@@ -106,6 +122,28 @@ fn main() {
             result.insert("reduced_index", index.to_string());
             result.insert("discriminant", o.discriminant(&theta).to_string());
             println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            continue;
         }
+        if to_find == "factorization" {
+            // TODO: employ faster algorithms
+            let value: BigInt = match input_config.input {
+                Input::Integer(ref value) => value.clone().into(),
+                Input::Polynomials(_) => {
+                    eprintln!("resultant accepts integer only");
+                    continue;
+                }
+            };
+            let result = ecm::factorize(&value);
+            let mut map = serde_json::Map::new();
+            for (p, e) in result {
+                map.insert(p.to_string(), serde_json::Value::Number(e.into()));
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::Value::Object(map)).unwrap(),
+            );
+            continue;
+        }
+        eprintln!("Unrecognized command: {}", to_find);
     }
 }
