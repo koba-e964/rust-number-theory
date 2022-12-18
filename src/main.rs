@@ -1,6 +1,7 @@
 use num::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
 use std::str::FromStr;
 
 use rust_number_theory::algebraic::Algebraic;
@@ -58,12 +59,18 @@ fn polynomial_unbridge(x: Vec<BigIntBridge>) -> Polynomial<BigInt> {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() <= 1 {
-        eprintln!("This executable needs a configuration file.");
+        eprintln!("This executable needs a configuration file (YAML or TOML).");
         std::process::exit(1);
     }
     let filename = args[1].clone();
-    let file = std::fs::File::open(&filename).unwrap();
-    let input_config: InputConfig = serde_yaml::from_reader(&file).unwrap();
+    let content = fs::read_to_string(filename).unwrap();
+    let input_config: InputConfig = if let Ok(conf) = serde_yaml::from_str(&content) {
+        conf
+    } else {
+        // A "nasty hack" suggested in https://github.com/toml-rs/toml-rs/issues/390#issuecomment-1095625417
+        let config_json = toml::from_str::<serde_json::Value>(&content).unwrap();
+        serde_json::from_value(config_json).unwrap()
+    };
     for to_find in input_config.to_find {
         if to_find == "resultant" {
             let polys = match input_config.input {

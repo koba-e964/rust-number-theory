@@ -1,0 +1,10 @@
+# Find the discriminant of 2x^3 + x^2 - 2x + 3.
+# To feed this file to the executable, run `cargo run data/input-discriminant.toml'.
+# The output should be {"discriminant":"-1132"}.
+
+to_find = [
+    'discriminant',
+]
+
+[input]
+polynomials = [['3', '-2', '1', '2']]
