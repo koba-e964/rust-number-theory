@@ -30,3 +30,6 @@ path = "./number-theory-linear"
 [dependencies.number-theory-elementary]
 version = "0.1"
 path = "./number-theory-elementary"
+
+[workspace]
+members = ["number-theory-elementary", "number-theory-linear"]
