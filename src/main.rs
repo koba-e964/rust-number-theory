@@ -77,7 +77,7 @@ fn main() {
         if to_find == "resultant" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
-                Input::Integer(_) => {
+                _ => {
                     eprintln!("resultant accepts polynomials only");
                     continue;
                 }
@@ -93,8 +93,8 @@ fn main() {
         if to_find == "discriminant" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
-                Input::Integer(_) => {
-                    eprintln!("resultant accepts polynomials only");
+                _ => {
+                    eprintln!("discriminant accepts polynomials only");
                     continue;
                 }
             };
@@ -108,8 +108,8 @@ fn main() {
         if to_find == "integral_basis" {
             let polys = match input_config.input {
                 Input::Polynomials(ref polys) => polys.clone(),
-                Input::Integer(_) => {
-                    eprintln!("resultant accepts polynomials only");
+                _ => {
+                    eprintln!("integral_basis accepts polynomials only");
                     continue;
                 }
             };
@@ -128,7 +128,7 @@ fn main() {
             // TODO: employ faster algorithms
             let value: BigInt = match input_config.input {
                 Input::Integer(ref value) => value.clone().into(),
-                Input::Polynomials(_) => {
+                _ => {
                     eprintln!("factorization accepts integer only");
                     continue;
                 }
