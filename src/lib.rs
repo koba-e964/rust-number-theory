@@ -11,6 +11,7 @@ pub mod integral_basis;
 pub mod mult_table;
 pub mod numerical_roots;
 pub mod order;
+pub mod perfect_power;
 pub mod poly_mod;
 pub mod polynomial;
 pub mod prime;

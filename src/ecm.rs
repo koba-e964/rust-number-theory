@@ -3,6 +3,7 @@ use num::{BigInt, One, Signed, Zero};
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Rem, Sub};
 
+use crate::perfect_power::perfect_power;
 use crate::prime;
 
 /// Factorizes an integer.
@@ -14,15 +15,22 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
 
     let b = 1000u64; // TODO
 
-    let mut stack = vec![x.clone()];
+    let mut stack = vec![(x.clone(), 1)];
     let mut map = HashMap::new();
-    while let Some(now) = stack.pop() {
+    while let Some((now, multiplicity)) = stack.pop() {
         if now <= BigInt::one() {
             continue;
         }
         if prime::is_prime(&now) {
-            *map.entry(now).or_insert(0) += 1;
+            *map.entry(now).or_insert(0) += multiplicity;
             continue;
+        }
+        {
+            let (b, k) = perfect_power(&now);
+            if k >= 2 {
+                stack.push((b, multiplicity * k as u64));
+                continue;
+            }
         }
         let fac = ecm(
             &now,
@@ -32,9 +40,13 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
                 verbose: false,
             },
         );
+        if fac == BigInt::one() {
+            stack.push((now, multiplicity));
+            continue;
+        }
         let other = &now / &fac;
-        stack.push(fac);
-        stack.push(other);
+        stack.push((fac, multiplicity));
+        stack.push((other, multiplicity));
     }
     let mut result: Vec<(BigInt, u64)> = map.into_iter().collect();
     result.sort();
@@ -59,6 +71,9 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
     let mut count = 0u64;
 
     loop {
+        if count >= 100 {
+            return BigInt::one();
+        }
         count += 1;
         if conf.verbose {
             eprintln!("Trying curve {}, B1 = {}, B2 = {}", count, conf.b1, conf.b2);
@@ -88,15 +103,23 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
 fn ecm_oneshot(mut pt: Point<BigInt>, curve: Ell<BigInt>, b1: u64, b2: u64) -> Result<(), BigInt> {
     for k in 1..b1 + 1 {
         pt = pt.mul(k.into(), &curve)?;
+        if pt.is_inf() {
+            return Ok(());
+        }
     }
     // Step 2: try all primes in range (b1, b2]
-    let pt6 = pt.mul(6.into(), &curve)?;
     for &init in &[b1.saturating_sub(1) / 6 * 6 + 1, (b1 + 1) / 6 * 6 - 1] {
         let mut cur_e = init;
-        let mut cur = pt.mul(init.into(), &curve)?;
+        pt = pt.mul(init.into(), &curve)?;
+        if pt.is_inf() {
+            return Ok(());
+        }
         while cur_e <= b2 {
-            cur = cur.add(&pt6, &curve)?;
             cur_e += 6;
+            pt = pt.mul(cur_e.into(), &curve)?;
+            if pt.is_inf() {
+                return Ok(());
+            }
         }
     }
     Ok(())
@@ -366,7 +389,8 @@ mod tests {
     }
 
     // Too slow. This test takes about 16 sec in *release* build, about 1 min in debug build.
-    #[allow(unused)]
+    #[test]
+    #[ignore]
     fn ecm_works_2() {
         let large1 = BigInt::from(1_000_000_007u128);
         let large2 = BigInt::from(1_000_000_009u128);
@@ -381,5 +405,12 @@ mod tests {
         );
         eprintln!("factor={}", factor);
         assert_eq!(a % factor, BigInt::zero());
+    }
+
+    #[test]
+    fn factorize_works_0() {
+        let n = BigInt::from(1_000_000_007u128 * 1_000_000_007u128);
+        let factors = factorize(&n);
+        assert_eq!(factors.len(), 1);
     }
 }

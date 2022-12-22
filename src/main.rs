@@ -129,7 +129,7 @@ fn main() {
             let value: BigInt = match input_config.input {
                 Input::Integer(ref value) => value.clone().into(),
                 Input::Polynomials(_) => {
-                    eprintln!("resultant accepts integer only");
+                    eprintln!("factorization accepts integer only");
                     continue;
                 }
             };

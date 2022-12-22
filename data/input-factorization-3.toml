@@ -1,0 +1,8 @@
+# Factorize 12171622290476241497444980012311021 (GNFS164).
+# To feed this file to the executable, run `cargo run data/input-factorization-3.toml'.
+to_find = [
+    "factorization",
+]
+
+[input]
+integer = "12171622290476241497444980012311021"
