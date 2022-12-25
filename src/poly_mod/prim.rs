@@ -84,6 +84,38 @@ pub fn poly_mod<Int: Clone + NumAssign + Integer>(f: &Polynomial<Int>, p: &Int) 
     Polynomial::from_raw(raw)
 }
 
+pub fn poly_div<Int: Clone + NumAssign + Integer>(
+    f: &Polynomial<Int>,
+    divisor: &Int,
+) -> Polynomial<Int> {
+    let deg = f.deg();
+    if deg == usize::MAX {
+        // f = 0
+        return f.clone();
+    }
+    let mut raw = vec![Int::zero(); deg + 1];
+    for i in 0..deg + 1 {
+        raw[i] = f.coef_at(i).div_floor(divisor);
+    }
+    Polynomial::from_raw(raw)
+}
+
+pub fn poly_mul<Int: Clone + NumAssign + Integer>(
+    f: &Polynomial<Int>,
+    multiplier: &Int,
+) -> Polynomial<Int> {
+    let deg = f.deg();
+    if deg == usize::MAX {
+        // f = 0
+        return f.clone();
+    }
+    let mut raw = vec![Int::zero(); deg + 1];
+    for i in 0..deg + 1 {
+        raw[i] = f.coef_at(i) * multiplier.clone();
+    }
+    Polynomial::from_raw(raw)
+}
+
 // Copy-pasted from polynomial.rs
 // TODO unify
 pub fn poly_divrem<Int: Clone + NumAssign + Integer>(

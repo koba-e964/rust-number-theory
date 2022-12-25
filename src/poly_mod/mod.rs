@@ -1,6 +1,7 @@
-mod factorize;
+mod factorize_mod_p;
+mod hensel;
 mod linear;
 mod prim;
 
-pub use crate::poly_mod::factorize::factorize_mod_p;
+pub use crate::poly_mod::factorize_mod_p::factorize_mod_p;
 pub use crate::poly_mod::linear::find_linear_factors;
