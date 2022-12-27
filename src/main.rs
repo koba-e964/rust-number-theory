@@ -1,4 +1,7 @@
+use num::bigint::Sign;
 use num::BigInt;
+use num::ToPrimitive;
+use rust_number_theory::poly_mod::factorize_mod_p;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -23,6 +26,11 @@ struct InputConfig {
 enum Input {
     Polynomials(Vec<Vec<BigIntBridge>>),
     Integer(BigIntBridge),
+    #[serde(rename = "polynomial_and_primes")]
+    PolynomialAndPrimes {
+        polynomial: Vec<BigIntBridge>,
+        primes: Vec<BigIntBridge>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -142,6 +150,66 @@ fn main() {
                 "{}",
                 serde_json::to_string_pretty(&serde_json::Value::Object(map)).unwrap(),
             );
+            continue;
+        }
+        if to_find == "factorization-mod-p" {
+            let (polynomial, primes) = match input_config.input {
+                Input::PolynomialAndPrimes {
+                    ref polynomial,
+                    ref primes,
+                } => (
+                    polynomial_unbridge(polynomial.clone()),
+                    primes
+                        .iter()
+                        .map(|p| p.clone().into())
+                        .collect::<Vec<BigInt>>(),
+                ),
+                _ => {
+                    eprintln!("factorization-mod-p accepts (polynomial, primes) only");
+                    continue;
+                }
+            };
+            #[derive(Serialize)]
+            struct Factor {
+                factor_vec: Vec<BigIntBridge>,
+                factor_str: String,
+                e: usize,
+            }
+            #[derive(Serialize)]
+            struct FactorizationData {
+                modulus: BigIntBridge,
+                factors: Vec<Factor>,
+            }
+            let mut data = vec![];
+            for p in primes {
+                let mut factors = vec![];
+                fn as_usize(a: &BigInt) -> usize {
+                    let (sign, digits) = a.to_u64_digits();
+                    match sign {
+                        Sign::Plus => {}
+                        _ => return 0,
+                    }
+                    if digits.len() >= 2 {
+                        return 0;
+                    }
+                    digits[0].to_usize().unwrap_or(0)
+                }
+                let result = factorize_mod_p::<BigInt>(&polynomial, &p, as_usize(&p));
+                for (f, e) in result {
+                    let factor_vec: Vec<BigIntBridge> = polynomial_bridge(f.clone());
+                    let factor_str = format!("{:?}", f);
+                    factors.push(Factor {
+                        factor_vec,
+                        factor_str,
+                        e,
+                    });
+                }
+                data.push(FactorizationData {
+                    modulus: p.into(),
+                    factors,
+                });
+            }
+            println!("{}", serde_json::to_string_pretty(&data).unwrap());
             continue;
         }
         eprintln!("Unrecognized command: {}", to_find);

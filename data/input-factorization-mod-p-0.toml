@@ -1,0 +1,24 @@
+# Factorize X^3-2 mod p for multiple p.
+# To feed this file to the executable, run `cargo run data/input-factorization-mod-p-0.toml'.
+to_find = [
+    "factorization-mod-p",
+]
+
+[input.polynomial_and_primes]
+polynomial = ["-2", "0", "0", "1"]
+primes = ["2", "3", "5", "7", "11", "13", "17", "19", "23", "29", "31", "37", "41", "43", "47", "53",
+    "59",
+    "61",
+    "67",
+    "73",
+    "79",
+    "83",
+    "89",
+    "97",
+    # 6k + 1 only
+    "103",
+    "109",
+    "127",
+    "139",
+    "151",
+]
