@@ -1,5 +1,6 @@
 extern crate num;
 
+use num::Signed;
 use num::{pow, traits::NumAssign, BigInt, BigRational, Complex, Integer, One, Zero};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
@@ -241,12 +242,12 @@ impl<R: AddAssign + Clone + Zero> Zero for Polynomial<R> {
     }
 }
 
-impl<R: Display + std::cmp::PartialEq + Zero> Debug for Polynomial<R> {
+impl<R: Display + std::cmp::PartialEq + Zero + One + Signed> Debug for Polynomial<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         (self as &dyn std::fmt::Display).fmt(f)
     }
 }
-impl<R: Display + std::cmp::PartialEq + Zero> Display for Polynomial<R> {
+impl<R: Display + std::cmp::PartialEq + Zero + One + Signed> Display for Polynomial<R> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.is_zero_primitive() {
             return Debug::fmt(&0, f);
@@ -260,7 +261,14 @@ impl<R: Display + std::cmp::PartialEq + Zero> Display for Polynomial<R> {
             if term_appear {
                 write!(f, " + ")?;
             }
-            write!(f, "({})", self.dat[i])?;
+            if self.dat[i].is_one() && i > 0 {
+            } else {
+                if self.dat[i].is_positive() {
+                    write!(f, "{}", self.dat[i])?;
+                } else {
+                    write!(f, "({})", self.dat[i])?;
+                }
+            }
             if i >= 2 {
                 write!(f, "X^{}", i)?;
             } else if i == 1 {
