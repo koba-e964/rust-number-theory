@@ -1,5 +1,5 @@
 #![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
-use num::traits::{Num, NumAssign, NumOps, Zero};
+use num::traits::{NumAssign, NumOps, Zero};
 use num::Integer;
 use rand::distributions::uniform::SampleUniform;
 use rand::{thread_rng, Rng};
@@ -11,7 +11,7 @@ use crate::poly_mod::prim::{
 use crate::polynomial::Polynomial;
 
 pub fn factorize_mod_p<
-    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
+    Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32> + SampleUniform,
 >(
     poly: &Polynomial<Int>,
     p: &Int,
@@ -43,7 +43,7 @@ where
 
 /// If p is very large (so that p does not fit in usize), the parameter pusize is ignored.
 /// In that case, the caller can pass any value.
-fn squarefree<Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32>>(
+fn squarefree<Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32>>(
     poly: &Polynomial<Int>,
     p: &Int,
     pusize: usize,
@@ -89,7 +89,7 @@ where
 /// This function returns a vector of pairs (A_d, d),
 /// where A_d is a product of distinct polynomials of degree d.
 /// The returned array is sorted in d's ascending order.
-fn degree<Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32>>(
+fn degree<Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32>>(
     poly: &Polynomial<Int>,
     p: &Int,
 ) -> Vec<(Polynomial<Int>, usize)>
@@ -117,9 +117,7 @@ where
     result
 }
 
-fn final_split<
-    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
->(
+fn final_split<Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32> + SampleUniform>(
     poly: &Polynomial<Int>,
     p: &Int,
     d: usize,
@@ -138,7 +136,7 @@ where
 }
 
 fn final_split_odd<
-    Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32> + SampleUniform,
+    Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32> + SampleUniform,
 >(
     poly: &Polynomial<Int>,
     p: &Int,
@@ -183,7 +181,7 @@ fn final_split_odd<
     }
 }
 
-fn final_split_2<Int: Clone + Integer + NumAssign + Num>(
+fn final_split_2<Int: Clone + Integer + NumAssign>(
     poly: &Polynomial<Int>,
     d: usize,
     result: &mut Vec<Polynomial<Int>>,

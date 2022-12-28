@@ -1,5 +1,5 @@
 use core::ops::Neg;
-use num::traits::{Num, NumAssign, NumOps};
+use num::traits::{NumAssign, NumOps};
 use num::Integer;
 
 use crate::polynomial::Polynomial;
@@ -17,7 +17,7 @@ use super::prim::{poly_div, poly_divrem, poly_mod, poly_mul};
 /// - gcd(l(a), r) = 1, deg(u) < deg(b), deg(v) < deg(a), deg(c) = deg(a) + deg(b)
 ///
 /// This function returns a triple (a_1, b_1, qr) which satisfies c = a_1 b_1 (mod qr).
-pub fn hensel_lift<Int: Clone + Integer + NumAssign + Num + Neg<Output = Int> + From<i32>>(
+pub fn hensel_lift<Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32>>(
     p: &Int,
     q: &Int,
     c: &Polynomial<Int>,
@@ -41,6 +41,9 @@ where
     let b1 = poly_mod(&(b + &poly_mul(&b0, q)), &qr);
     (a1, b1, qr)
 }
+
+// TODO: quadratic_hensel_lift
+// Algorithm 3.5.6 in [Cohen].
 
 #[cfg(test)]
 mod tests {
