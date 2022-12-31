@@ -13,6 +13,7 @@ pub mod numerical_roots;
 pub mod order;
 pub mod perfect_power;
 pub mod poly_mod;
+pub mod poly_z;
 pub mod polynomial;
 pub mod prime;
 pub mod resultant;
