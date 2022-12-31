@@ -10,6 +10,7 @@ use crate::poly_mod::prim::{
 };
 use crate::polynomial::Polynomial;
 
+/// This function returns the factorization of poly/leading(poly)
 pub fn factorize_mod_p<
     Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32> + SampleUniform,
 >(
@@ -259,7 +260,7 @@ mod tests {
         let p = 2;
         let raw = vec![1, 0, 0, 1];
         let poly = Polynomial::from_raw(raw);
-        let factors = factorize_mod_p::<i64>(&poly, &p, 3);
+        let factors = factorize_mod_p::<i64>(&poly, &p, 2);
         let mut prod: Polynomial<i64> = Polynomial::from_mono(1);
         for (factor, d) in factors {
             for _ in 0..d {
