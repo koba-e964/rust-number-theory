@@ -1,4 +1,5 @@
 #![allow(clippy::needless_range_loop)]
+use num::integer::ExtendedGcd;
 use num::traits::{NumAssign, NumOps, Zero};
 use num::Integer;
 use std::ops::Neg;
@@ -164,12 +165,54 @@ where
     poly_gcd(b, &rem, p)
 }
 
+/// Returns (g, u, v) where g = au + bv.
+///
+/// p must be >= 2.
+pub fn poly_ext_gcd<Int: Clone + NumAssign + Integer + Neg<Output = Int>>(
+    a: &Polynomial<Int>,
+    b: &Polynomial<Int>,
+    p: &Int,
+) -> (Polynomial<Int>, Polynomial<Int>, Polynomial<Int>)
+where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let (quo, rem) = poly_divrem(a, b, p);
+    if rem.is_zero() {
+        return (b.clone(), rem, Polynomial::from_mono(Int::one()));
+    }
+    let (g, u0, v0) = poly_ext_gcd(b, &rem, p);
+    // g = b * u0 + (a - b * quo) * v0
+    let v = poly_mod_sub(&u0, &poly_mod(&(&quo * &v0), p), p);
+    (g, v0, v)
+}
+
 pub fn poly_mod_sub<Int: Clone + NumAssign + Integer + Neg<Output = Int>>(
     a: &Polynomial<Int>,
     b: &Polynomial<Int>,
     p: &Int,
 ) -> Polynomial<Int> {
     poly_mod(&(a - b), p)
+}
+
+/// If gcd(a, b) = 1, finds u, v s.t. au + bv = 1.
+pub fn poly_coprime_witness<Int: Clone + NumAssign + Integer + Neg<Output = Int>>(
+    a: &Polynomial<Int>,
+    b: &Polynomial<Int>,
+    p: &Int,
+) -> (Polynomial<Int>, Polynomial<Int>)
+where
+    for<'a> &'a Int: NumOps<&'a Int, Int>,
+{
+    let (g, u, v) = poly_ext_gcd(a, b, p);
+    if g.deg() != 0 {
+        panic!("The gcd should be non-zero constant, but it isn't");
+    }
+    let ExtendedGcd { x: inv, .. } = g.coef_at(0).extended_gcd(p);
+    let inv = inv.mod_floor(p);
+    (
+        poly_mod(&poly_mul(&u, &inv), p),
+        poly_mod(&poly_mul(&v, &inv), p),
+    )
 }
 
 pub fn divide_by_x_a<Int: Clone + NumAssign + Integer>(
@@ -190,4 +233,41 @@ pub fn divide_by_x_a<Int: Clone + NumAssign + Integer>(
     carry = carry.mod_floor(p);
     debug_assert!(carry == Int::zero());
     Polynomial::from_raw(coefs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn poly_coprime_witness_works_0() {
+        let p = 5;
+        let a = Polynomial::from_raw(vec![2, 1]);
+        let b = Polynomial::from_raw(vec![3, 1]);
+        let (u, v) = poly_coprime_witness::<i32>(&a, &b, &p);
+        assert_eq!(u, Polynomial::from_mono(4));
+        assert_eq!(v, Polynomial::from_mono(1));
+    }
+
+    #[test]
+    fn poly_coprime_witness_works_1() {
+        let p = 5;
+        let a = Polynomial::from_raw(vec![1, 1, 1]);
+        let b = Polynomial::from_raw(vec![3, 1]);
+        let (u, v) = poly_coprime_witness::<i32>(&a, &b, &p);
+        // (X^2 + X + 1) * 3 + (X + 3) * (2X + 1) = 1 (mod 5)
+        assert_eq!(u, Polynomial::from_mono(3));
+        assert_eq!(v, Polynomial::from_raw(vec![1, 2]));
+    }
+
+    #[test]
+    fn poly_coprime_witness_works_2() {
+        let p = 125; // prime power
+        let a = Polynomial::from_raw(vec![1, 1, 1]);
+        let b = Polynomial::from_raw(vec![3, 1]);
+        let (u, v) = poly_coprime_witness::<i32>(&a, &b, &p);
+        // (X^2 + X + 1) * 18 + (X + 3) * (107X + 36) = 1 (mod 5^3)
+        assert_eq!(u, Polynomial::from_mono(18));
+        assert_eq!(v, Polynomial::from_raw(vec![36, 107]));
+    }
 }
