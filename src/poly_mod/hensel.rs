@@ -83,6 +83,8 @@ where
 /// Lifts c's factorization mod p into mod p^e.
 ///
 /// factors cannot have duplicate polynomials.
+///
+/// It is not necessary that c = \prod factors holds; c = (constant) * \prod factors is enough.
 pub fn lift_factorization<Int: Clone + Integer + NumAssign + Neg<Output = Int> + From<i32>>(
     p: &Int,
     e: u32,
@@ -95,8 +97,12 @@ where
     // TODO: improve from naive implementation
     let mut res = factors.to_vec();
     let mut cur = p.clone();
+    let lc = c.coef_at(c.deg());
     for _ in 1..e {
-        let (sub, next_cur) = hensel_lift_multiple(p, &cur, c, &res);
+        let next_cur = &cur * p;
+        let invlc = lc.extended_gcd(&next_cur).x.mod_floor(&next_cur);
+        let divided = poly_mod(&poly_mul(c, &invlc), &next_cur);
+        let (sub, _) = hensel_lift_multiple(p, &cur, &divided, &res);
         res = sub;
         cur = next_cur;
     }

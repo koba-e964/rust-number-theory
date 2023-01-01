@@ -1,15 +1,13 @@
-use num::{BigInt, One, Signed, Zero};
+use num::{BigInt, Integer, One, Signed, Zero};
 use number_theory_elementary::Primes;
 
 use crate::{
-    poly_mod::{self, lift_factorization, poly_div},
+    poly_mod::{self, lift_factorization, poly_div, poly_mul},
     polynomial::{div_exact, Polynomial},
     resultant::resultant_gcd,
 };
 
 /// Factorizes a polynomial. Returns (content, list of (polynomial, multiplicity))
-///
-/// `a` must be monic or constant * monic. (TODO: remove this constraint)
 pub fn factorize(a: &Polynomial<BigInt>) -> (BigInt, Vec<(Polynomial<BigInt>, usize)>) {
     if a.is_zero() {
         return (BigInt::zero(), Vec::new());
@@ -42,11 +40,10 @@ pub fn factorize(a: &Polynomial<BigInt>) -> (BigInt, Vec<(Polynomial<BigInt>, us
     (conta, result)
 }
 
-/// a must be squarefree, primitive and monic.
+/// a must be squarefree and primitive.
 fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> {
     // Theorem 3.5.1 in [Cohen]
     let n = a.deg();
-    assert_eq!(a.coef_at(n), BigInt::one(), "lc(a) == 1 must hold");
     let mut sum = a.coef_at(n).abs();
     for i in 0..n + 1 {
         sum += a.coef_at(i).abs();
@@ -61,8 +58,11 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
     let mut p = BigInt::zero();
     let mut pusize = 0;
     for now in Primes::new() {
-        // check if (a, a') = 1 in F_p[X]
+        // check if (a, a') = 1 in F_p[X] and p does not divide lc(a)
         let nowint: BigInt = (now as i32).into();
+        if a.coef_at(n).is_multiple_of(&nowint) {
+            continue;
+        }
         let a = poly_mod::poly_mod(&a, &nowint);
         let a_p = poly_mod::differential(&a, &nowint);
         let gcd = poly_mod::poly_gcd::<BigInt>(&a, &a_p, &nowint);
@@ -82,7 +82,6 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
     let factors = poly_mod::factorize_mod_p::<BigInt>(&a, &p, pusize);
     assert!(factors.iter().all(|&(_, e)| e == 1));
     let factors: Vec<Polynomial<BigInt>> = factors.into_iter().map(|(poly, _)| poly).collect();
-    // a being monic is required here to ensure a == \prod factors
     let mut lifted = lift_factorization::<BigInt>(&p, e, &a, &factors);
     // 5. Try combination
     let mut d = 1;
@@ -90,11 +89,12 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
     let mut result = vec![];
     'outer: while 2 * d <= lifted.len() {
         assert!(lifted.len() <= 25);
+        let lca = a.coef_at(a.deg());
         for bits in 0usize..1 << lifted.len() {
             if bits.count_ones() as usize != d {
                 continue;
             }
-            let mut prod: Polynomial<BigInt> = Polynomial::from_mono(BigInt::one());
+            let mut prod: Polynomial<BigInt> = Polynomial::from_mono(lca.clone());
             for i in 0..lifted.len() {
                 if (bits & 1 << i) != 0 {
                     prod = poly_mod::poly_mod(&(&prod * &lifted[i]), &pe);
@@ -103,13 +103,15 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
             // modify prod so that all coefficients are in [-p^e/2, p^e/2)
             let bias = Polynomial::from_raw(vec![pe2.clone(); prod.deg() + 1]);
             prod = poly_mod::poly_mod(&(&prod + &bias), &pe) - bias;
-            let quo = if let Some(quo) = div_exact(&a, &prod) {
-                quo
+            let alca = poly_mul(&a, &lca);
+            if let Some(_quo) = div_exact(&alca, &prod) {
             } else {
                 continue;
-            };
-            result.push(prod);
-            a = quo;
+            }
+            let prodcont = prod.content();
+            let ppprod = poly_div(&prod, &prodcont);
+            result.push(ppprod.clone());
+            a = div_exact(&a, &ppprod).expect("This division will always succeed");
             for i in (0..lifted.len()).rev() {
                 if (bits & 1 << i) != 0 {
                     lifted.remove(i);
@@ -163,7 +165,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn factorize_works_3() {
         let a = Polynomial::<BigInt>::from_raw(vec![2.into(), 7.into(), 6.into()]);
         let (cont, result) = factorize(&a);
@@ -172,6 +173,23 @@ mod tests {
         assert_eq!(result.len(), 2);
         let factor1: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 2.into()]);
         let factor2: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 3.into()]);
+        assert!(
+            result == vec![(factor1.clone(), 1), (factor2.clone(), 1)]
+                || result == vec![(factor2, 1), (factor1, 1)]
+        );
+    }
+
+    #[test]
+    fn factorize_works_4() {
+        let a =
+            Polynomial::<BigInt>::from_raw(vec![1.into(), 0.into(), 0.into(), 0.into(), 4.into()]);
+        let (cont, result) = factorize(&a);
+        // 4X^4+1 = (2X^2+2X+1)(2X^2-2X+1)
+        assert_eq!(cont, 1.into());
+        assert_eq!(result.len(), 2);
+        let factor1: Polynomial<BigInt> =
+            Polynomial::from_raw(vec![1.into(), (-2).into(), 2.into()]);
+        let factor2: Polynomial<BigInt> = Polynomial::from_raw(vec![1.into(), 2.into(), 2.into()]);
         assert!(
             result == vec![(factor1.clone(), 1), (factor2.clone(), 1)]
                 || result == vec![(factor2, 1), (factor1, 1)]
