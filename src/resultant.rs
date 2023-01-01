@@ -1,7 +1,10 @@
 extern crate num;
 
-use crate::polynomial::{div_rem_bigrational, pseudo_div_rem_bigint, Polynomial};
-use num::{pow, BigInt, BigRational, One, Zero};
+use crate::{
+    poly_mod::{poly_div, poly_mul},
+    polynomial::{div_rem_bigrational, pseudo_div_rem_bigint, Polynomial},
+};
+use num::{pow, BigInt, BigRational, Integer, One, Zero};
 
 /// Using naive arithmetic
 pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRational>) -> BigRational {
@@ -28,7 +31,49 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
 }
 
 #[allow(clippy::many_single_char_names)]
-pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> BigInt {
+fn resultant_smart_gcd(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> Polynomial<BigInt> {
+    if f.is_zero() {
+        return g.clone();
+    }
+    let contf = f.content();
+    let contg = g.content();
+    let d = contf.gcd(&contg);
+    let mut f = poly_div(f, &contf);
+    let mut g = poly_div(g, &contg);
+    let mut a = BigInt::one();
+    let mut b = BigInt::one();
+    loop {
+        if g.is_zero() {
+            break;
+        }
+        let f_deg = f.deg();
+        let g_deg = g.deg();
+        if g_deg == 0 {
+            f = Polynomial::<BigInt>::from_mono(BigInt::one());
+            break;
+        }
+        if f_deg < g_deg {
+            std::mem::swap(&mut f, &mut g);
+            continue;
+        }
+        let delta = f_deg - g_deg;
+        let (_, h) = pseudo_div_rem_bigint(&f, &g);
+        f = g;
+        g = h;
+        // Divide g by a * b^delta
+        let factor = &a * pow(b.clone(), delta);
+        for i in 0..g.dat.len() {
+            g.dat[i] /= &factor;
+        }
+        a = f.dat[f.deg()].clone();
+        b = pow(a.clone(), delta) * &b / pow(b, delta);
+    }
+    let contf = f.content();
+    poly_mul(&poly_div(&f, &contf), &d)
+}
+
+#[allow(clippy::many_single_char_names)]
+fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> BigInt {
     if f.is_zero() {
         return BigInt::zero();
     }
@@ -77,6 +122,10 @@ pub fn resultant_smart(f: &Polynomial<BigInt>, g: &Polynomial<BigInt>) -> BigInt
 
 pub fn resultant(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> BigInt {
     resultant_smart(a, b)
+}
+
+pub fn resultant_gcd(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> Polynomial<BigInt> {
+    resultant_smart_gcd(a, b)
 }
 
 #[cfg(test)]

@@ -69,6 +69,21 @@ impl<Int: Clone + NumAssign + Integer + From<i32>> Polynomial<Int> {
     }
 }
 
+impl<Int: Clone + Integer> Polynomial<Int> {
+    /// Finds the content of self, i.e., the gcd of its coefficients.
+    pub fn content(&self) -> Int {
+        if self.is_zero_primitive() {
+            return Int::zero();
+        }
+        let n = self.deg();
+        let mut gcd = Int::zero();
+        for i in 0..=n {
+            gcd = gcd.gcd(&self.coef_at(i));
+        }
+        gcd
+    }
+}
+
 impl Polynomial<Complex<f64>> {
     pub fn differential_complex(&self) -> Polynomial<Complex<f64>> {
         if self.is_zero_primitive() {
@@ -322,6 +337,41 @@ pub fn pseudo_div_rem_bigint(
     (Polynomial::from_raw(quo), Polynomial::from_raw(tmp))
 }
 
+/// Computes a / b. If a is not a multiple of b, this function returns None.
+pub fn div_exact(a: &Polynomial<BigInt>, b: &Polynomial<BigInt>) -> Option<Polynomial<BigInt>> {
+    let a_deg = a.deg();
+    let b_deg = b.deg();
+    if b.is_zero() {
+        return None;
+    }
+    if a.is_zero() {
+        return Some(Polynomial::from_mono(0));
+    }
+    if a_deg < b_deg {
+        return None;
+    }
+    let lcb = b.dat[b_deg].clone();
+    let mut tmp = a.dat.clone();
+    let mut quo = vec![0.into(); a_deg - b_deg + 1];
+    let diff = a_deg - b_deg;
+
+    // Naive division
+    for i in (0..diff + 1).rev() {
+        if !tmp[i + b_deg].is_multiple_of(&lcb) {
+            return None;
+        }
+        let coef = tmp[i + b_deg].div_floor(&lcb);
+        for j in 0..b_deg + 1 {
+            tmp[i + j] -= &coef * &b.dat[j];
+        }
+        quo[i] = coef;
+    }
+    if tmp.iter().any(|coef| !coef.is_zero()) {
+        return None;
+    }
+    Some(Polynomial::from_raw(quo))
+}
+
 pub fn div_rem_bigrational(
     a: &Polynomial<BigRational>,
     b: &Polynomial<BigRational>,
@@ -349,8 +399,8 @@ pub fn div_rem_bigrational(
 
 #[cfg(test)]
 mod tests {
-    use super::{div_rem_bigint, div_rem_bigrational, pseudo_div_rem_bigint, Polynomial};
-    use num::{BigInt, Zero};
+    use super::*;
+
     #[test]
     fn test_sub_zero() {
         let p1: Polynomial<BigInt> = Polynomial::zero();
@@ -420,5 +470,15 @@ mod tests {
         let r_ex = Polynomial::from_raw(r_ex);
         assert_eq!(q, q_ex);
         assert_eq!(r, r_ex);
+    }
+
+    #[test]
+    fn div_exact_works_0() {
+        // 6X^2+7X+2
+        let p1: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 7.into(), 6.into()]);
+        // 3X+2
+        let p2: Polynomial<BigInt> = Polynomial::from_raw(vec![2.into(), 3.into()]);
+        let quo = div_exact(&p1, &p2); // 2X+1
+        assert_eq!(quo, Some(Polynomial::from_raw(vec![1.into(), 2.into()])));
     }
 }
