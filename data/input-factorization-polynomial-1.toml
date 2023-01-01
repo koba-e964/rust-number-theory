@@ -1,0 +1,10 @@
+# Find the factorization of x^4 + 6x^3 + 11x^2 + 6x + 1.
+# To feed this file to the executable, run `cargo run data/input-factorization-polynomial-1.toml'.
+# Example from https://math.stackexchange.com/questions/684036/factoring-a-hard-polynomial
+
+to_find = [
+    'factorization',
+]
+
+[input]
+polynomials = [['1', '6', '11', '6', '1']]

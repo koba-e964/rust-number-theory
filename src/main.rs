@@ -2,6 +2,7 @@ use num::bigint::Sign;
 use num::BigInt;
 use num::ToPrimitive;
 use rust_number_theory::poly_mod::factorize_mod_p;
+use rust_number_theory::poly_z;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -134,22 +135,57 @@ fn main() {
         }
         if to_find == "factorization" {
             // TODO: employ faster algorithms
-            let value: BigInt = match input_config.input {
-                Input::Integer(ref value) => value.clone().into(),
+            match input_config.input {
+                Input::Integer(ref value) => {
+                    let value: BigInt = value.clone().into();
+                    let result = ecm::factorize(&value);
+                    let mut map = serde_json::Map::new();
+                    for (p, e) in result {
+                        map.insert(p.to_string(), serde_json::Value::Number(e.into()));
+                    }
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::Value::Object(map)).unwrap(),
+                    );
+                }
+                Input::Polynomials(ref polys) => {
+                    let poly = polynomial_unbridge(polys[0].clone());
+                    let (content, result) = poly_z::factorize(&poly);
+                    #[derive(Serialize)]
+                    struct Factor {
+                        factor_vec: Vec<BigIntBridge>,
+                        factor_str: String,
+                        e: usize,
+                    }
+                    #[derive(Serialize)]
+                    struct FactorizationData {
+                        content: BigIntBridge,
+                        factors: Vec<Factor>,
+                    }
+                    let mut factors = vec![];
+                    for (f, e) in result {
+                        let factor_vec: Vec<BigIntBridge> = polynomial_bridge(f.clone());
+                        let factor_str = format!("{:?}", f);
+                        factors.push(Factor {
+                            factor_vec,
+                            factor_str,
+                            e,
+                        });
+                    }
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&FactorizationData {
+                            content: content.into(),
+                            factors,
+                        })
+                        .unwrap(),
+                    );
+                }
                 _ => {
-                    eprintln!("factorization accepts integer only");
+                    eprintln!("factorization accepts integer or polynomials only");
                     continue;
                 }
             };
-            let result = ecm::factorize(&value);
-            let mut map = serde_json::Map::new();
-            for (p, e) in result {
-                map.insert(p.to_string(), serde_json::Value::Number(e.into()));
-            }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&serde_json::Value::Object(map)).unwrap(),
-            );
             continue;
         }
         if to_find == "factorization-mod-p" {

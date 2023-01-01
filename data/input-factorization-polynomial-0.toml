@@ -1,0 +1,9 @@
+# Find the factorization of x^5 + x + 1.
+# To feed this file to the executable, run `cargo run data/input-factorization-polynomial-0.toml'.
+
+to_find = [
+    'factorization',
+]
+
+[input]
+polynomials = [['1', '1', '0', '0', '0', '1']]
