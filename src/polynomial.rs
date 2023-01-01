@@ -69,18 +69,30 @@ impl<Int: Clone + NumAssign + Integer + From<i32>> Polynomial<Int> {
     }
 }
 
-impl<Int: Clone + Integer> Polynomial<Int> {
+impl<Int: Clone + Integer + Signed> Polynomial<Int> {
     /// Finds the content of self, i.e., the gcd of its coefficients.
     pub fn content(&self) -> Int {
+        self.cont_pp().0
+    }
+    /// Finds (content, primitive part).
+    pub fn cont_pp(&self) -> (Int, Self) {
         if self.is_zero_primitive() {
-            return Int::zero();
+            return (Int::zero(), Polynomial::from_mono(Int::one()));
         }
         let n = self.deg();
         let mut gcd = Int::zero();
         for i in 0..=n {
             gcd = gcd.gcd(&self.coef_at(i));
         }
-        gcd
+        let lc = self.coef_at(self.deg());
+        if lc.is_negative() {
+            gcd = gcd.neg();
+        }
+        let mut pp = vec![Int::zero(); self.deg() + 1];
+        for i in 0..self.deg() + 1 {
+            pp[i] = self.coef_at(i).div_floor(&gcd);
+        }
+        (gcd, Polynomial::from_raw(pp))
     }
 }
 

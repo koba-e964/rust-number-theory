@@ -2,7 +2,7 @@ use num::{BigInt, Integer, One, Signed, Zero};
 use number_theory_elementary::Primes;
 
 use crate::{
-    poly_mod::{self, lift_factorization, poly_div, poly_mul},
+    poly_mod::{self, lift_factorization, poly_mul},
     polynomial::{div_exact, Polynomial},
     resultant::resultant_gcd,
 };
@@ -13,13 +13,13 @@ pub fn factorize(a: &Polynomial<BigInt>) -> (BigInt, Vec<(Polynomial<BigInt>, us
         return (BigInt::zero(), Vec::new());
     }
 
-    let conta = a.content();
+    let (conta, ppa) = a.cont_pp();
     if a.deg() == 0 {
         return (conta, Vec::new());
     }
 
     // a must be monic here
-    let mut a = poly_div(a, &conta);
+    let mut a = ppa;
     let a_p = a.differential();
     let gcd = resultant_gcd(&a, &a_p);
     let mut sqfree = a.clone();
@@ -108,8 +108,7 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
             } else {
                 continue;
             }
-            let prodcont = prod.content();
-            let ppprod = poly_div(&prod, &prodcont);
+            let (_, ppprod) = prod.cont_pp();
             result.push(ppprod.clone());
             a = div_exact(&a, &ppprod).expect("This division will always succeed");
             for i in (0..lifted.len()).rev() {
