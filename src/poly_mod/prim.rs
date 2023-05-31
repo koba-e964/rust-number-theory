@@ -64,9 +64,9 @@ where
     let two = Int::one() + Int::one();
     while e > Int::zero() {
         if e.is_odd() {
-            product = poly_divrem(&poly_mod(&(&product * &current), &modulus), g, &modulus).1;
+            product = poly_divrem(&poly_mod(&(&product * &current), modulus), g, modulus).1;
         }
-        current = poly_divrem(&poly_mod(&(&current * &current), &modulus), g, modulus).1;
+        current = poly_divrem(&poly_mod(&(&current * &current), modulus), g, modulus).1;
         e = e.div_floor(&two);
     }
     product

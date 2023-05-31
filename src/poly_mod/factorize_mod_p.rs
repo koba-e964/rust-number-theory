@@ -205,7 +205,7 @@ fn final_split_2<Int: Clone + Integer + NumAssign>(
         for _ in 0..d - 1 {
             c = &(&c * &c) + &t;
             c = poly_mod(&c, &two);
-            c = poly_divrem(&c, &poly, &two).1;
+            c = poly_divrem(&c, poly, &two).1;
         }
         let b = poly_gcd(poly, &c, &two);
         if b.deg() == 0 || b.deg() == poly.deg() {
@@ -290,7 +290,7 @@ mod tests {
         assert_eq!(ans.len(), 1);
         let &(ref fac, e) = &ans[0];
         assert_eq!(e, 2);
-        assert_associate(&fac, &Polynomial::from_raw(vec![1, 1]), p);
+        assert_associate(fac, &Polynomial::from_raw(vec![1, 1]), p);
     }
 
     #[test]
@@ -304,7 +304,7 @@ mod tests {
         assert_eq!(ans.len(), 1);
         let &(ref fac, e) = &ans[0];
         assert_eq!(e, 3);
-        assert_associate(&fac, &Polynomial::from_raw(vec![1, 1]), p);
+        assert_associate(fac, &Polynomial::from_raw(vec![1, 1]), p);
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod tests {
         assert_eq!(ans.len(), 1);
         let &(ref fac, e) = &ans[0];
         assert_eq!(e, 5);
-        assert_associate(&fac, &Polynomial::from_raw(vec![1, 1]), p);
+        assert_associate(fac, &Polynomial::from_raw(vec![1, 1]), p);
     }
 
     #[test]
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(ans.len(), 1);
         let &(ref fac, e) = &ans[0];
         assert_eq!(e, 1);
-        assert_associate(&fac, &Polynomial::from_raw(vec![2, 3, 1]), p);
+        assert_associate(fac, &Polynomial::from_raw(vec![2, 3, 1]), p);
     }
 
     #[test]

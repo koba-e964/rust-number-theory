@@ -42,6 +42,12 @@ impl Primes {
     }
 }
 
+impl Default for Primes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Iterator for Primes {
     type Item = usize;
     fn next(&mut self) -> Option<Self::Item> {

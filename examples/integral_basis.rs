@@ -31,8 +31,8 @@ fn main() {
 }
 
 fn find_integral_basis(theta: &Algebraic) {
-    let o = integral_basis::find_integral_basis(&theta);
+    let o = integral_basis::find_integral_basis(theta);
     eprintln!("Z_K = {}", o);
 
-    eprintln!("D(Z_K) = {}", o.discriminant(&theta));
+    eprintln!("D(Z_K) = {}", o.discriminant(theta));
 }

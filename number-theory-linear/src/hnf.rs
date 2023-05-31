@@ -31,13 +31,13 @@ impl HNF {
         for i in 0..nb {
             mat[i + na].clone_from_slice(&b.0[i]);
         }
-        HNF::hnf(&mat)
+        HNF::new(&mat)
     }
     /// Algorithm 2.4.4 in [Cohen]
     /// Computes the HNF of a given matrix.
     ///
     /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
-    pub fn hnf(a: &[Vec<BigInt>]) -> HNF {
+    pub fn new(a: &[Vec<BigInt>]) -> HNF {
         hnf_with_ker(a).0
     }
 
@@ -223,7 +223,7 @@ mod tests {
         // 3 1
         // 1 1
         let a: Vec<Vec<BigInt>> = vec![vec![3.into(), 1.into()], vec![1.into(), 1.into()]];
-        let hnf = HNF::hnf(&a);
+        let hnf = HNF::new(&a);
         assert_eq!(
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
@@ -240,7 +240,7 @@ mod tests {
             vec![3.into(), 1.into()],
             vec![1.into(), 1.into()],
         ];
-        let hnf = HNF::hnf(&a);
+        let hnf = HNF::new(&a);
         assert_eq!(
             hnf.0,
             vec![vec![2.into(), 0.into()], vec![1.into(), 1.into()]],
@@ -255,7 +255,7 @@ mod tests {
             vec![2.into(), 0.into(), 1.into(), 0.into()],
             vec![1.into(), 1.into(), 0.into(), 0.into()],
         ];
-        let hnf = HNF::hnf(&a);
+        let hnf = HNF::new(&a);
         assert_eq!(
             hnf.0,
             vec![
@@ -277,7 +277,7 @@ mod tests {
             vec![(-336).into()],
             vec![(-1423).into()],
         ];
-        let hnf = HNF::hnf(&a);
+        let hnf = HNF::new(&a);
         assert_eq!(hnf.0.len(), 1);
     }
 
@@ -292,7 +292,7 @@ mod tests {
             vec![2.into(), 0.into()],
         ];
         let kern = HNF::kernel(&a);
-        let kern = HNF::hnf(&kern);
+        let kern = HNF::new(&kern);
         // ker A is a 2-dimensional Z-module, spanned by e.g. {(-1 1 -1), (2 0 -5)}.
         // Whatever its "reduction" is, it has two rows, each of which A annihilates.
         assert_eq!(kern.0.len(), 2);

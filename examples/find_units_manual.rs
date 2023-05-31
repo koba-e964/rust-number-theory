@@ -103,7 +103,7 @@ fn factorize_with_known_primes<'mul>(
     map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>,
     mult_table: &'mul MultTable,
 ) -> Option<Vec<(BigInt, usize)>> {
-    let norm = mult_table.norm(&num);
+    let norm = mult_table.norm(num);
     if norm.is_zero() {
         return None;
     }
@@ -152,7 +152,7 @@ fn factorize_with_known_primes<'mul>(
     }
 }
 
-fn euler_prod<'mul>(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'mul>>>) -> f64 {
+fn euler_prod(primes: &[i32], map: &HashMap<BigInt, Vec<PrimeIdeal<'_>>>) -> f64 {
     let mut ans = 1.0;
     for &p in primes {
         let big_p = BigInt::from(p);

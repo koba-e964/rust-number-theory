@@ -106,7 +106,7 @@ impl MultTable {
                 int[i][j] = (&d[i][j] * &denom_lcm).to_integer();
             }
         }
-        FracIdeal::new(denom_lcm, Ideal::new(HNF::hnf(&int), self))
+        FracIdeal::new(denom_lcm, Ideal::new(HNF::new(&int), self))
     }
 }
 

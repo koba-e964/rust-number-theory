@@ -62,7 +62,7 @@ impl Order {
                 basis[i][j] = (&self.basis[i][j] * &lcm).to_integer();
             }
         }
-        let hnf = HNF::hnf(&basis);
+        let hnf = HNF::new(&basis);
         let mut result = vec![vec![BigRational::zero(); deg]; deg];
         for i in 0..deg {
             for j in 0..deg {
@@ -78,9 +78,9 @@ impl Order {
         // This code snipped is copy-pasted from round2.
         // TODO: unify
         for i in 0..deg {
-            let oi = Self::create_num(&self.basis[i], &theta);
+            let oi = Self::create_num(&self.basis[i], theta);
             for j in 0..deg {
-                let oj = Self::create_num(&self.basis[j], &theta);
+                let oj = Self::create_num(&self.basis[j], theta);
                 let prod = &oi * &oj;
                 let mut b = vec![BigRational::zero(); deg];
                 for k in 0..deg {

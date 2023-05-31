@@ -2,7 +2,7 @@ use num::{bigint::Sign, BigInt, One};
 
 pub fn perfect_power(n: &BigInt) -> (BigInt, u32) {
     if n.sign() == Sign::Minus {
-        panic!("n should be >= 0, but got: {}", n.to_string());
+        panic!("n should be >= 0, but got: {}", n);
     }
     if *n <= BigInt::one() {
         return (n.clone(), 1);

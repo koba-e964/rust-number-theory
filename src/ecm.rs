@@ -190,7 +190,7 @@ where
                 y: zmod::<Int>(&y3, n),
                 z: den3,
             }
-            .simplify(&curve);
+            .simplify(curve);
         }
         let lambda = zmod::<Int>(&(&self.y - &other.y), n);
         let xdif2 = &(&xdif * &xdif) % n;

@@ -8,7 +8,7 @@ fn main() {
     // Z[sqrt(-5)], (2, 1 + sqrt(-5))
     let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
     let theta = Algebraic::new(p);
-    let hnf = HNF::hnf(&[
+    let hnf = HNF::new(&[
         vec![1.into(), 1.into()],
         vec![5.into(), 1.into()],
         vec![2.into(), 0.into()],

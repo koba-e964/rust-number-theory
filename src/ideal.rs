@@ -33,7 +33,7 @@ impl<'mul> Ideal<'mul> {
             rows.push(mult_table.mul(elem, &wi));
         }
         Ideal {
-            hnf: HNF::hnf(&rows),
+            hnf: HNF::new(&rows),
             mult_table,
         }
     }
@@ -70,7 +70,7 @@ impl<'mul> Ideal<'mul> {
                 trd[i][j] = d[j][i].clone();
             }
         }
-        FracIdeal::new(a, Ideal::new(HNF::hnf(&trd), self.mult_table))
+        FracIdeal::new(a, Ideal::new(HNF::new(&trd), self.mult_table))
     }
 
     pub fn contains(&self, num: &[BigInt]) -> bool {
@@ -90,7 +90,7 @@ impl<'a, 'mul> Add for &'a Ideal<'mul> {
         let mut basis_b = rhs.hnf.as_vecs();
         let mut res = self.hnf.as_vecs();
         res.append(&mut basis_b);
-        let hnf = HNF::hnf(&res);
+        let hnf = HNF::new(&res);
         Ideal {
             hnf,
             mult_table: self.mult_table,
@@ -113,7 +113,7 @@ impl<'a, 'mul> Mul for &'a Ideal<'mul> {
                 res.push(prod)
             }
         }
-        let hnf = HNF::hnf(&res);
+        let hnf = HNF::new(&res);
         Ideal {
             hnf,
             mult_table: self.mult_table,
@@ -157,7 +157,7 @@ mod tests {
         // Z[sqrt(-5)], (2, 1 + sqrt(-5))
         let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
         let theta = Algebraic::new(p);
-        let hnf = HNF::hnf(&[
+        let hnf = HNF::new(&[
             vec![1.into(), 1.into()],
             vec![5.into(), 1.into()],
             vec![2.into(), 0.into()],
@@ -174,7 +174,7 @@ mod tests {
         // Z[sqrt(-5)], (2, 1 + sqrt(-5))
         let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
         let theta = Algebraic::new(p);
-        let hnf = HNF::hnf(&[
+        let hnf = HNF::new(&[
             vec![1.into(), 1.into()],
             vec![5.into(), 1.into()],
             vec![2.into(), 0.into()],
@@ -193,7 +193,7 @@ mod tests {
         // Z[sqrt(-5)], (2, 1 + sqrt(-5))
         let p = Polynomial::from_raw(vec![5.into(), 0.into(), 1.into()]);
         let theta = Algebraic::new(p);
-        let hnf = HNF::hnf(&[
+        let hnf = HNF::new(&[
             vec![1.into(), 1.into()],
             vec![5.into(), 1.into()],
             vec![2.into(), 0.into()],

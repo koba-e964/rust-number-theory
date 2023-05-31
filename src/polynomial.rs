@@ -62,8 +62,7 @@ impl<Int: Clone + NumAssign + Integer + From<i32>> Polynomial<Int> {
         let mut tmp = vec![0.into(); deg];
         #[allow(clippy::needless_range_loop)]
         for i in 0..deg {
-            tmp[i] = self.dat[i + 1].clone();
-            tmp[i] *= Int::from(i as i32 + 1);
+            tmp[i] = self.dat[i + 1].clone() * Int::from(i as i32 + 1);
         }
         Polynomial::from_raw(tmp)
     }
@@ -89,6 +88,7 @@ impl<Int: Clone + Integer + Signed> Polynomial<Int> {
             gcd = gcd.neg();
         }
         let mut pp = vec![Int::zero(); self.deg() + 1];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..self.deg() + 1 {
             pp[i] = self.coef_at(i).div_floor(&gcd);
         }
@@ -288,6 +288,7 @@ impl<R: Display + std::cmp::PartialEq + Zero + One + Signed> Display for Polynom
             if term_appear {
                 write!(f, " + ")?;
             }
+            #[allow(clippy::collapsible_else_if)] // for readability
             if self.dat[i].is_one() && i > 0 {
             } else {
                 if self.dat[i].is_positive() {

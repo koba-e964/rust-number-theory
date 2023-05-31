@@ -9,9 +9,9 @@ fn main() {
     // 3 1
     // 1 1
     let a: Vec<Vec<BigInt>> = vec![vec![3.into(), 1.into()], vec![1.into(), 1.into()]];
-    let hnf = HNF::hnf(&a);
+    let hnf = HNF::new(&a);
     let kern = HNF::kernel(&a);
-    let kern = HNF::hnf(&kern);
+    let kern = HNF::new(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
 
@@ -23,9 +23,9 @@ fn main() {
         vec![3.into(), 1.into()],
         vec![1.into(), 1.into()],
     ];
-    let hnf = HNF::hnf(&a);
+    let hnf = HNF::new(&a);
     let kern = HNF::kernel(&a);
-    let kern = HNF::hnf(&kern);
+    let kern = HNF::new(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
 
@@ -37,9 +37,9 @@ fn main() {
         vec![3.into(), 1.into()],
         vec![1.into(), 1.into()],
     ];
-    let hnf = HNF::hnf(&a);
+    let hnf = HNF::new(&a);
     let kern = HNF::kernel(&a);
-    let kern = HNF::hnf(&kern);
+    let kern = HNF::new(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
 
@@ -51,9 +51,9 @@ fn main() {
         vec![7.into(), 0.into()],
         vec![2.into(), 0.into()],
     ];
-    let hnf = HNF::hnf(&a);
+    let hnf = HNF::new(&a);
     let kern = HNF::kernel(&a);
-    let kern = HNF::hnf(&kern);
+    let kern = HNF::new(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
 
@@ -67,9 +67,9 @@ fn main() {
         vec![(-336).into()],
         vec![(-1423).into()],
     ];
-    let hnf = HNF::hnf(&a);
+    let hnf = HNF::new(&a);
     let kern = HNF::kernel(&a);
-    let kern = HNF::hnf(&kern);
+    let kern = HNF::new(&kern);
     eprintln!("hnf =\n{}", hnf);
     eprintln!("kernel =\n{}", kern);
 }

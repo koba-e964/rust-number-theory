@@ -35,7 +35,7 @@ pub fn kronecker_symbol_i64(mut a: i64, mut b: i64) -> i32 {
             a /= 2;
         }
         if v % 2 == 1 {
-            k = recip_table[(b & 7) as usize] * k;
+            k *= recip_table[(b & 7) as usize];
         }
         // 4.
         if (a & b & 2) != 0 {

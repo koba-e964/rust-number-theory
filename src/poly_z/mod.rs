@@ -63,7 +63,7 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
         if a.coef_at(n).is_multiple_of(&nowint) {
             continue;
         }
-        let a = poly_mod::poly_mod(&a, &nowint);
+        let a = poly_mod::poly_mod(a, &nowint);
         let a_p = poly_mod::differential(&a, &nowint);
         let gcd = poly_mod::poly_gcd::<BigInt>(&a, &a_p, &nowint);
         if gcd.deg() == 0 {
@@ -79,10 +79,10 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
         e += 1;
     }
     let pe2 = &pe / &BigInt::from(2); // floor(p^e/2)
-    let factors = poly_mod::factorize_mod_p::<BigInt>(&a, &p, pusize);
+    let factors = poly_mod::factorize_mod_p::<BigInt>(a, &p, pusize);
     assert!(factors.iter().all(|&(_, e)| e == 1));
     let factors: Vec<Polynomial<BigInt>> = factors.into_iter().map(|(poly, _)| poly).collect();
-    let mut lifted = lift_factorization::<BigInt>(&p, e, &a, &factors);
+    let mut lifted = lift_factorization::<BigInt>(&p, e, a, &factors);
     // 5. Try combination
     let mut d = 1;
     let mut a = a.clone();
@@ -95,6 +95,7 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
                 continue;
             }
             let mut prod: Polynomial<BigInt> = Polynomial::from_mono(lca.clone());
+            #[allow(clippy::needless_range_loop)]
             for i in 0..lifted.len() {
                 if (bits & 1 << i) != 0 {
                     prod = poly_mod::poly_mod(&(&prod * &lifted[i]), &pe);

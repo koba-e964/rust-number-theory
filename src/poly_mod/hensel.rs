@@ -62,8 +62,8 @@ where
     }
     let mut accumulated = vec![];
     let mut current: Polynomial<Int> = Polynomial::from_mono(Int::one());
-    for i in 0..n {
-        current = poly_mod(&(&current * &factors[i]), q);
+    for factor in factors {
+        current = poly_mod(&(&current * factor), q);
         accumulated.push(current.clone());
     }
     let mut result = vec![];
