@@ -1,9 +1,10 @@
 use num::Signed;
 
+mod round2;
+
 use crate::algebraic::Algebraic;
 use crate::factorize;
 use crate::order::{non_monic_initial_order, Order};
-use crate::round2;
 
 /// Finds an integral basis of Q(theta).
 pub fn find_integral_basis(theta: &Algebraic) -> Order {

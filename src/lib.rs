@@ -17,4 +17,3 @@ pub mod poly_z;
 pub mod polynomial;
 pub mod prime;
 pub mod resultant;
-pub mod round2;
