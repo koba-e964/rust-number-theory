@@ -20,6 +20,7 @@ impl Algebraic {
         }
     }
     pub fn with_expr(minimal_poly: Polynomial<BigInt>, expr: Polynomial<BigRational>) -> Self {
+        debug_assert!(expr.deg() < minimal_poly.deg());
         Algebraic {
             min_poly: minimal_poly,
             expr,

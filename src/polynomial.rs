@@ -25,6 +25,9 @@ impl<R> Polynomial<R> {
     fn is_zero_primitive(&self) -> bool {
         self.dat.is_empty()
     }
+    pub fn into_vec(self) -> Vec<R> {
+        self.dat
+    }
 }
 impl<R: Zero> Polynomial<R> {
     pub fn from_raw(mut raw: Vec<R>) -> Self {

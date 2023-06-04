@@ -16,4 +16,5 @@ pub mod poly_mod;
 pub mod poly_z;
 pub mod polynomial;
 pub mod prime;
+pub mod prime_decomp;
 pub mod resultant;

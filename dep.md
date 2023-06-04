@@ -29,3 +29,7 @@ Modules in a section below can depend on modules in sections above.
 
 ## ideal class group
 - class
+
+## decomposition of primes
+- prime_decomp
+- prime_decomp/simple

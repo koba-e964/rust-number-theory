@@ -25,11 +25,16 @@ impl Order {
         self.basis.len()
     }
 
+    #[inline(always)]
     pub fn discriminant(&self, theta: &Algebraic) -> BigInt {
-        let deg = theta.min_poly.deg();
+        self.discriminant_with_min_poly(&theta.min_poly)
+    }
+
+    fn discriminant_with_min_poly(&self, min_poly: &Polynomial<BigInt>) -> BigInt {
+        let deg = min_poly.deg();
         let det = determinant(&self.basis);
-        let disc = discriminant(&theta.min_poly);
-        let lc = theta.min_poly.coef_at(deg);
+        let disc = discriminant(min_poly);
+        let lc = min_poly.coef_at(deg);
         let value = BigRational::from_integer(disc) * &det * &det;
         let value = value / BigRational::from_integer(lc.pow(2 * (deg - 1)));
         assert!(value.is_integer());
