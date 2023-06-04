@@ -17,18 +17,14 @@ fn main() {
     // (x-1)^2 + 36, the minimum polynomial of 1 + 6i
     let theta = Algebraic::new(Polynomial::from_raw(vec![37.into(), (-2).into(), 1.into()]));
     let o = trivial_order_monic(&theta);
-    let o1 = Order {
-        basis: vec![
-            vec![BigRational::one(), BigRational::zero()],
-            vec![inv2.clone(), inv2],
-        ],
-    };
-    let o2 = Order {
-        basis: vec![
-            vec![BigRational::one(), BigRational::zero()],
-            vec![inv3.clone() * BigInt::from(2), inv3],
-        ],
-    };
+    let o1 = Order::from_basis(&[
+        vec![BigRational::one(), BigRational::zero()],
+        vec![inv2.clone(), inv2],
+    ]);
+    let o2 = Order::from_basis(&[
+        vec![BigRational::one(), BigRational::zero()],
+        vec![inv3.clone() * BigInt::from(2), inv3],
+    ]);
     eprintln!("(O1: Z[x]) = {}", index(&o1, &o));
     eprintln!("(O2: Z[x]) = {}", index(&o2, &o));
     let union = union(&o1, &o2);
@@ -64,14 +60,12 @@ fn main() {
                 .collect()
         })
         .collect();
-    let o1 = Order {
-        basis: {
-            let mut v = o1_old;
-            let mut o1_new = o1_new;
-            v.append(&mut o1_new);
-            v
-        },
-    };
+    let o1 = Order::from_basis(&{
+        let mut v = o1_old;
+        let mut o1_new = o1_new;
+        v.append(&mut o1_new);
+        v
+    });
     eprintln!("(O1 : O) = {}", index(&o1, &o));
 
     let disc = o.discriminant(&theta);

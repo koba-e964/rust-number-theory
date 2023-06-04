@@ -73,7 +73,7 @@ fn find_integral_basis(theta: &Algebraic) {
             // phi(w_i)
             let mut phiw = vec![];
             for i in 0..deg {
-                let val = create_num(&o.basis[i], theta);
+                let val = create_num(&o.basis_nth(i), theta);
                 phiw.push(power(&val, &pow));
             }
             let mut lcm = BigInt::one();
@@ -93,7 +93,7 @@ fn find_integral_basis(theta: &Algebraic) {
             }
             for i in 0..deg {
                 for j in 0..deg {
-                    let val = (&o.basis[i][j] * &lcm).to_integer();
+                    let val = (&o.basis_coef(i, j) * &lcm).to_integer();
                     basis[i + deg][j] = &val * p;
                 }
             }
@@ -108,7 +108,7 @@ fn find_integral_basis(theta: &Algebraic) {
             for i in 0..i_p_len {
                 for j in 0..deg {
                     for k in 0..deg {
-                        i_p[i][k] += &hnf[i][j] * &(&o.basis[j][k] * &lcm).to_integer();
+                        i_p[i][k] += &hnf[i][j] * &(&o.basis_coef(j, k) * &lcm).to_integer();
                     }
                 }
             }
@@ -158,7 +158,7 @@ fn find_integral_basis(theta: &Algebraic) {
             }
             for i in 0..deg {
                 for j in 0..deg {
-                    new_o_basis[u_p.len() + i][j] = (&o.basis[i][j] * &lcm * p).to_integer();
+                    new_o_basis[u_p.len() + i][j] = (&o.basis_coef(i, j) * &lcm * p).to_integer();
                 }
             }
             let u_p = HNF::new(&new_o_basis).into_vecs();
@@ -170,7 +170,7 @@ fn find_integral_basis(theta: &Algebraic) {
                     new_o_basis[i][j] = BigRational::new(u_p[i][j].clone(), &lcm * p);
                 }
             }
-            let new_o = Order { basis: new_o_basis };
+            let new_o = Order::from_basis(&new_o_basis);
             let mut index = index(&new_o, &o);
             eprintln!("(new_o : o) = {}", index);
             eprintln!("o = {}", o);

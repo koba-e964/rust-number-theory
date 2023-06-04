@@ -27,15 +27,15 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
     let mut table = vec![vec![vec![BigInt::zero(); deg]; deg]; deg];
     let mut table2 = vec![vec![vec![BigInt::zero(); deg]; deg]; deg];
     for i in 0..deg {
-        let oi = create_num(&o.basis[i], theta);
+        let oi = create_num(&o.basis_nth(i), theta);
         for j in 0..deg {
-            let oj = create_num(&o.basis[j], theta);
+            let oj = create_num(&o.basis_nth(j), theta);
             let prod = &oi * &oj;
             let mut b = vec![BigRational::zero(); deg];
             for k in 0..deg {
                 b[k] = prod.expr.coef_at(k);
             }
-            let inv = gauss_elim(&o.basis, &b).expect("O is not linearly independent");
+            let inv = gauss_elim(&o.basis(), &b).expect("O is not linearly independent");
             for k in 0..deg {
                 assert!(inv[k].is_integer());
                 table2[i][j][k] = inv[k].to_integer() % &p2;
@@ -123,13 +123,13 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
         for j in 0..deg {
             for k in 0..deg {
                 new_o_basis[i][k] +=
-                    BigRational::new(u_p.as_ref()[i][j].clone(), p.clone()) * &o.basis[j][k];
+                    BigRational::new(u_p.as_ref()[i][j].clone(), p.clone()) * &o.basis_coef(j, k);
             }
         }
     }
-    let new_o = Order { basis: new_o_basis };
+    let new_o = Order::from_basis(&new_o_basis);
     let mut index = index(&new_o, &o);
-    o = new_o.hnf_reduce();
+    o = new_o;
     let mut howmany = 0;
     while index > BigInt::one() {
         assert_eq!(&index % p, BigInt::zero());

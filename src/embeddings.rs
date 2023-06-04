@@ -27,7 +27,7 @@ impl CEmbeddings {
             for j in 0..deg {
                 let mut current = Complex::new(1.0, 0.0);
                 for k in 0..deg {
-                    basis[i][j] += o.basis[j][k].to_f64().unwrap() * current;
+                    basis[i][j] += o.basis_coef(j, k).to_f64().unwrap() * current;
                     current *= root;
                 }
             }
@@ -76,12 +76,10 @@ mod tests {
         // 1 \pm 6i
         let roots_re = vec![];
         let roots_im = vec![Complex::new(1.0, 6.0)];
-        let order = Order {
-            basis: vec![
-                vec![BigRational::one(), BigRational::zero()],
-                vec![BigRational::zero(), BigRational::one()],
-            ],
-        };
+        let order = Order::from_basis(&[
+            vec![BigRational::one(), BigRational::zero()],
+            vec![BigRational::zero(), BigRational::one()],
+        ]);
         let embeddings = CEmbeddings::new(&roots_re, &roots_im, &order);
         assert_eq!(
             embeddings.compute(0, &[BigInt::from(0), BigInt::from(1)]),

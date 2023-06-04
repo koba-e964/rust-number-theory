@@ -11,10 +11,12 @@ use crate::polynomial::Polynomial;
 use number_theory_linear::hnf::HNF;
 use number_theory_linear::{determinant, gauss_elim};
 
-/// Order. Constructed from n vectors independent over Q.
-#[derive(Clone)]
+/// An order. Constructed from n vectors independent over Q.
+///
+/// The order is represented in HNF.
+#[derive(Clone, PartialEq, Eq)]
 pub struct Order {
-    pub basis: Vec<Vec<BigRational>>,
+    basis: Vec<Vec<BigRational>>,
 }
 
 impl Order {
@@ -34,6 +36,13 @@ impl Order {
         value.to_integer()
     }
 
+    pub fn from_basis(basis: &[Vec<BigRational>]) -> Self {
+        Order {
+            basis: basis.to_vec(),
+        }
+        .hnf_reduce()
+    }
+
     /// Returns Z[theta].
     pub fn singly_gen(theta: &Algebraic) -> Self {
         let deg = theta.deg();
@@ -44,11 +53,11 @@ impl Order {
             row[..cur.expr.dat.len()].clone_from_slice(&cur.expr.dat);
             cur = &cur * theta;
         }
-        Order { basis }
+        Order { basis }.hnf_reduce()
     }
 
     /// Reduce this order to HNF.
-    pub fn hnf_reduce(&self) -> Order {
+    fn hnf_reduce(&self) -> Self {
         let mut lcm = BigInt::one();
         let deg = self.basis.len();
         for row in &self.basis {
@@ -124,6 +133,24 @@ impl Order {
         }
         returned
     }
+
+    /// Finds the j-th coefficient of the i-th vector of this basis.
+    #[inline]
+    pub fn basis_coef(&self, i: usize, j: usize) -> BigRational {
+        self.basis[i][j].clone()
+    }
+
+    /// Returns the i-th vector of this basis.
+    #[inline]
+    pub fn basis_nth(&self, i: usize) -> Vec<BigRational> {
+        self.basis[i].clone()
+    }
+
+    /// Returns the vectors of this basis.
+    #[inline]
+    pub fn basis(&self) -> Vec<Vec<BigRational>> {
+        self.basis.clone()
+    }
 }
 
 impl Display for Order {
@@ -169,7 +196,7 @@ pub fn trivial_order_monic(theta: &Algebraic) -> Order {
     for i in 0..deg {
         basis[i][i] = BigRational::one();
     }
-    Order { basis }
+    Order { basis }.hnf_reduce()
 }
 
 /// Returns Z[theta] \cap Z[1 / theta].
@@ -182,7 +209,7 @@ pub fn non_monic_initial_order(theta: &Algebraic) -> Order {
             basis[i][j] = BigRational::from_integer(theta.min_poly.coef_at(deg - (i - j)));
         }
     }
-    Order { basis }
+    Order { basis }.hnf_reduce()
 }
 
 /// Creates the minimum order that contains both a and b.
@@ -228,7 +255,7 @@ pub fn union(a: &Order, b: &Order) -> Order {
             neword[i][j] = BigRational::new(hnf.as_ref()[i][j].clone(), lcm.clone());
         }
     }
-    Order { basis: neword }
+    Order { basis: neword }.hnf_reduce()
 }
 
 #[cfg(test)]
