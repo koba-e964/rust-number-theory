@@ -44,7 +44,7 @@ impl<'mul> Ideal<'mul> {
 
     /// Finds a such that (a) = self /\ Z.
     pub fn cap_z(&self) -> BigInt {
-        self.hnf.0[0][0].clone()
+        self.hnf.as_ref()[0][0].clone()
     }
 
     /// Given an ideal and the inverse of the different, finds the former's inverse.
@@ -58,7 +58,7 @@ impl<'mul> Ideal<'mul> {
         let mut ab = vec![vec![BigInt::zero(); n]; n];
         for i in 0..n {
             for j in 0..n {
-                ab[i][j] = &a * &inv_diff.numer().hnf.0[i][j];
+                ab[i][j] = &a * &inv_diff.numer().hnf.as_ref()[i][j];
             }
         }
         let c = c.hnf.as_vecs();

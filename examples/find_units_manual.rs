@@ -265,7 +265,7 @@ fn main() {
     let cl = principal.determinant();
     eprintln!("tentative Cl(K) = {}", cl);
     let mut unseen: HashSet<usize> = (0..w).collect();
-    for p in &principal.0 {
+    for p in principal.as_ref() {
         for i in 0..w {
             if !p[i].is_zero() {
                 unseen.remove(&i);

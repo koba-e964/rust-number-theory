@@ -98,29 +98,29 @@ fn find_integral_basis(theta: &Algebraic) {
                 }
             }
             // I_p in terms of O's basis
-            let mut hnf = HNF::new(&HNF::kernel(&basis));
-            for row in hnf.0.iter_mut() {
+            let mut hnf = HNF::new(&HNF::kernel(&basis)).into_vecs();
+            for row in hnf.iter_mut() {
                 row.truncate(deg);
             }
             // transformation: I_p in terms of Q(theta) * lcm
-            let i_p_len = hnf.0.len();
+            let i_p_len = hnf.len();
             let mut i_p = vec![vec![BigInt::zero(); deg]; i_p_len];
             for i in 0..i_p_len {
                 for j in 0..deg {
                     for k in 0..deg {
-                        i_p[i][k] += &hnf.0[i][j] * &(&o.basis[j][k] * &lcm).to_integer();
+                        i_p[i][k] += &hnf[i][j] * &(&o.basis[j][k] * &lcm).to_integer();
                     }
                 }
             }
 
             // U_p
-            let mut u_p = HNF::new(&i_p);
+            let mut u_p = HNF::new(&i_p).into_vecs();
 
             for i in 0..i_p_len {
                 let ei = create_num_int(&i_p[i], theta);
-                let mut tmp_basis = vec![vec![BigInt::zero(); deg]; u_p.0.len() + i_p_len];
-                for i in 0..u_p.0.len() {
-                    let prod = &create_num_int(&u_p.0[i], theta) * &ei;
+                let mut tmp_basis = vec![vec![BigInt::zero(); deg]; u_p.len() + i_p_len];
+                for i in 0..u_p.len() {
+                    let prod = &create_num_int(&u_p[i], theta) * &ei;
                     for j in 0..deg {
                         let value = &prod.expr.coef_at(j) / &lcm;
                         assert!(value.is_integer());
@@ -129,45 +129,45 @@ fn find_integral_basis(theta: &Algebraic) {
                 }
                 for i in 0..i_p_len {
                     for j in 0..deg {
-                        tmp_basis[i + u_p.0.len()][j] = &i_p[i][j] * p;
+                        tmp_basis[i + u_p.len()][j] = &i_p[i][j] * p;
                     }
                 }
                 // new_u_p is in terms of U_p + pI_p
-                let mut new_u_p = HNF::new(&HNF::kernel(&tmp_basis));
-                for row in new_u_p.0.iter_mut() {
-                    row.truncate(u_p.0.len());
+                let mut new_u_p = HNF::new(&HNF::kernel(&tmp_basis)).into_vecs();
+                for row in new_u_p.iter_mut() {
+                    row.truncate(u_p.len());
                 }
                 // In terms of theta
-                let mut tmp_basis = vec![vec![BigInt::zero(); deg]; new_u_p.0.len()];
-                for i in 0..new_u_p.0.len() {
-                    for j in 0..u_p.0.len() {
+                let mut tmp_basis = vec![vec![BigInt::zero(); deg]; new_u_p.len()];
+                for i in 0..new_u_p.len() {
+                    for j in 0..u_p.len() {
                         for k in 0..deg {
-                            tmp_basis[i][k] += &u_p.0[j][k] * &new_u_p.0[i][j];
+                            tmp_basis[i][k] += &u_p[j][k] * &new_u_p[i][j];
                         }
                     }
                 }
-                let new_u_p = HNF::new(&tmp_basis);
+                let new_u_p = HNF::new(&tmp_basis).into_vecs();
                 u_p = new_u_p;
             }
 
-            assert!(u_p.0.len() <= deg);
+            assert!(u_p.len() <= deg);
             // U_p
-            let mut new_o_basis = vec![vec![BigInt::zero(); deg]; u_p.0.len() + deg];
-            for i in 0..u_p.0.len() {
-                new_o_basis[i].clone_from_slice(&u_p.0[i]);
+            let mut new_o_basis = vec![vec![BigInt::zero(); deg]; u_p.len() + deg];
+            for i in 0..u_p.len() {
+                new_o_basis[i].clone_from_slice(&u_p[i]);
             }
             for i in 0..deg {
                 for j in 0..deg {
-                    new_o_basis[u_p.0.len() + i][j] = (&o.basis[i][j] * &lcm * p).to_integer();
+                    new_o_basis[u_p.len() + i][j] = (&o.basis[i][j] * &lcm * p).to_integer();
                 }
             }
-            let u_p = HNF::new(&new_o_basis);
-            assert_eq!(u_p.0.len(), deg);
+            let u_p = HNF::new(&new_o_basis).into_vecs();
+            assert_eq!(u_p.len(), deg);
 
             let mut new_o_basis = vec![vec![BigRational::zero(); deg]; deg];
             for i in 0..deg {
                 for j in 0..deg {
-                    new_o_basis[i][j] = BigRational::new(u_p.0[i][j].clone(), &lcm * p);
+                    new_o_basis[i][j] = BigRational::new(u_p[i][j].clone(), &lcm * p);
                 }
             }
             let new_o = Order { basis: new_o_basis };

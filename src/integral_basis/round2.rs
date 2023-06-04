@@ -63,9 +63,9 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
         basis[i + deg][i] = p.clone();
     }
     // I_p in terms of O's basis
-    let mut i_p = HNF::new(&HNF::kernel(&basis));
-    let i_p_len = i_p.0.len();
-    for row in i_p.0.iter_mut() {
+    let mut i_p = HNF::new(&HNF::kernel(&basis)).into_vecs();
+    let i_p_len = i_p.len();
+    for row in i_p.iter_mut() {
         row.truncate(deg);
     }
 
@@ -74,47 +74,47 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
 
     for i in 0..i_p_len {
         // U_p eta[i] + pI_p in terms of O's basis
-        let mut tmp_basis = vec![vec![]; u_p.0.len() + i_p_len];
-        for j in 0..u_p.0.len() {
+        let mut tmp_basis = vec![vec![]; u_p.len() + i_p_len];
+        for j in 0..u_p.len() {
             // Find eta[i] * eta[j] mod p^2
-            let prod = mul_mod_p::<BigInt>(&i_p.0[i], &u_p.0[j], &table2, &p2);
+            let prod = mul_mod_p::<BigInt>(&i_p[i], &u_p[j], &table2, &p2);
             tmp_basis[j] = prod;
         }
         for i in 0..i_p_len {
-            tmp_basis[i + u_p.0.len()] = vec![BigInt::zero(); deg];
+            tmp_basis[i + u_p.len()] = vec![BigInt::zero(); deg];
             for j in 0..deg {
-                tmp_basis[i + u_p.0.len()][j] = &i_p.0[i][j] * p;
+                tmp_basis[i + u_p.len()][j] = &i_p[i][j] * p;
             }
         }
         // new_u_p is in terms of U_p + pI_p
-        let mut new_u_p = HNF::new(&HNF::kernel(&tmp_basis));
-        for row in new_u_p.0.iter_mut() {
-            row.truncate(u_p.0.len());
+        let mut new_u_p = HNF::new(&HNF::kernel(&tmp_basis)).into_vecs();
+        for row in new_u_p.iter_mut() {
+            row.truncate(u_p.len());
         }
         // In terms of O's basis
-        let mut tmp_basis = vec![vec![BigInt::zero(); deg]; new_u_p.0.len()];
-        for i in 0..new_u_p.0.len() {
-            for j in 0..u_p.0.len() {
+        let mut tmp_basis = vec![vec![BigInt::zero(); deg]; new_u_p.len()];
+        for i in 0..new_u_p.len() {
+            for j in 0..u_p.len() {
                 for k in 0..deg {
-                    tmp_basis[i][k] += &u_p.0[j][k] * &new_u_p.0[i][j];
+                    tmp_basis[i][k] += &u_p[j][k] * &new_u_p[i][j];
                 }
             }
         }
         let new_u_p = HNF::new(&tmp_basis);
-        u_p = new_u_p;
+        u_p = new_u_p.into_vecs();
     }
 
-    assert!(u_p.0.len() <= deg);
+    assert!(u_p.len() <= deg);
     // U_p in O's basis
-    let mut new_o_basis = vec![vec![BigInt::zero(); deg]; u_p.0.len() + deg];
-    for i in 0..u_p.0.len() {
-        new_o_basis[i].clone_from_slice(&u_p.0[i]);
+    let mut new_o_basis = vec![vec![BigInt::zero(); deg]; u_p.len() + deg];
+    for i in 0..u_p.len() {
+        new_o_basis[i].clone_from_slice(&u_p[i]);
     }
     for i in 0..deg {
-        new_o_basis[u_p.0.len() + i][i] = p.clone();
+        new_o_basis[u_p.len() + i][i] = p.clone();
     }
     let u_p = HNF::new(&new_o_basis);
-    assert_eq!(u_p.0.len(), deg);
+    assert_eq!(u_p.dim(), deg);
 
     // Basis conversion: new O in terms of Q(theta)'s basis (theta^i)
     // TODO: reduce
@@ -123,7 +123,7 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
         for j in 0..deg {
             for k in 0..deg {
                 new_o_basis[i][k] +=
-                    BigRational::new(u_p.0[i][j].clone(), p.clone()) * &o.basis[j][k];
+                    BigRational::new(u_p.as_ref()[i][j].clone(), p.clone()) * &o.basis[j][k];
             }
         }
     }

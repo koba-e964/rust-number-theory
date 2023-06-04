@@ -66,7 +66,7 @@ impl Order {
         let mut result = vec![vec![BigRational::zero(); deg]; deg];
         for i in 0..deg {
             for j in 0..deg {
-                result[i][j] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());
+                result[i][j] = BigRational::new(hnf.as_ref()[i][j].clone(), lcm.clone());
             }
         }
         Order { basis: result }
@@ -220,12 +220,12 @@ pub fn union(a: &Order, b: &Order) -> Order {
             basis_b[i][j] = val;
         }
     }
-    let hnf = HNF::union(&HNF(basis_a), &HNF(basis_b));
-    let n = hnf.0[0].len();
+    let hnf = HNF::union(&HNF::new(&basis_a), &HNF::new(&basis_b));
+    let n = hnf.as_ref()[0].len();
     let mut neword = vec![vec![BigRational::zero(); m]; n];
     for i in 0..n {
         for j in 0..m {
-            neword[i][j] = BigRational::new(hnf.0[i][j].clone(), lcm.clone());
+            neword[i][j] = BigRational::new(hnf.as_ref()[i][j].clone(), lcm.clone());
         }
     }
     Order { basis: neword }

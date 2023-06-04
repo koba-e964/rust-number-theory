@@ -12,7 +12,7 @@ use std::fmt::Display;
 /// Therefore, it is better understood as a sequence of row vectors than a sequence of column vectors.
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct HNF(pub Vec<Vec<BigInt>>);
+pub struct HNF(pub(crate) Vec<Vec<BigInt>>);
 
 impl HNF {
     /// Construct the sum module of the given two modules. The resulting module is returned as an HNF.
@@ -49,6 +49,10 @@ impl HNF {
 
     pub fn as_vecs(&self) -> Vec<Vec<BigInt>> {
         self.0.clone()
+    }
+
+    pub fn into_vecs(self) -> Vec<Vec<BigInt>> {
+        self.0
     }
 
     pub fn determinant(&self) -> BigInt {
@@ -91,6 +95,12 @@ impl Display for HNF {
             }
         }
         Ok(())
+    }
+}
+
+impl AsRef<[Vec<BigInt>]> for HNF {
+    fn as_ref(&self) -> &[Vec<BigInt>] {
+        &self.0
     }
 }
 
