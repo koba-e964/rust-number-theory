@@ -4,9 +4,12 @@ use num::{Integer, Zero};
 
 use crate::MatrixNotInvertible;
 
+/// Solves ax = b.
+///
 /// If a is not invertible, this function returns Err(MatrixNotInvertible).
+///
 /// Complexity: O(n^3)
-pub fn gauss_elim<Int: Clone + Integer + NumAssign>(
+pub fn solve_linear_system<Int: Clone + Integer + NumAssign>(
     a: &[Vec<Ratio<Int>>],
     b: &[Ratio<Int>],
 ) -> Result<Vec<Ratio<Int>>, MatrixNotInvertible> {
@@ -61,11 +64,11 @@ mod tests {
     use num::One;
 
     #[test]
-    fn gauss_elim_works() {
+    fn solve_linear_system_works() {
         let one = Ratio::<i64>::one();
         let a: Vec<Vec<Ratio<i64>>> = vec![vec![one, one * 2], vec![one * 3, one * 4]];
         let b = vec![one * 5, one * 8];
-        let ans = gauss_elim(&a, &b).unwrap();
+        let ans = solve_linear_system(&a, &b).unwrap();
         // (2 1) (1 2; 3 4) = (5 8)
         assert_eq!(ans, vec![one * 2, one]);
     }

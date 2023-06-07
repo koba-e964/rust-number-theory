@@ -4,8 +4,8 @@ use std::ops::{AddAssign, Mul, RemAssign};
 use crate::algebraic::Algebraic;
 use crate::order::{index, Order};
 use crate::polynomial::Polynomial;
-use number_theory_linear::gauss_elim;
 use number_theory_linear::hnf::HNF;
+use number_theory_linear::solve_linear_system;
 
 /// Performs round 2 algorithm to an order once.
 #[allow(clippy::needless_range_loop)]
@@ -35,7 +35,7 @@ pub fn one_step(theta: &Algebraic, o: &Order, p: &BigInt) -> (Order, u64) {
             for k in 0..deg {
                 b[k] = prod.expr.coef_at(k);
             }
-            let inv = gauss_elim(&o.basis(), &b).expect("O is not linearly independent");
+            let inv = solve_linear_system(&o.basis(), &b).expect("O is not linearly independent");
             for k in 0..deg {
                 assert!(inv[k].is_integer());
                 table2[i][j][k] = inv[k].to_integer() % &p2;

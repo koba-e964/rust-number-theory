@@ -9,7 +9,7 @@ use crate::discriminant::discriminant;
 use crate::mult_table::MultTable;
 use crate::polynomial::Polynomial;
 use number_theory_linear::hnf::HNF;
-use number_theory_linear::{determinant, gauss_elim};
+use number_theory_linear::{determinant, solve_linear_system};
 
 /// An order. Constructed from n vectors independent over Q.
 ///
@@ -100,7 +100,8 @@ impl Order {
                 for k in 0..deg {
                     b[k] = prod.expr.coef_at(k);
                 }
-                let inv = gauss_elim(&self.basis, &b).expect("O is not linearly independent");
+                let inv =
+                    solve_linear_system(&self.basis, &b).expect("O is not linearly independent");
                 for k in 0..deg {
                     assert!(inv[k].is_integer());
                     table[i][j][k] = inv[k].to_integer();
@@ -125,7 +126,7 @@ impl Order {
         for k in 0..deg {
             b[k] = a.expr.coef_at(k);
         }
-        gauss_elim(&self.basis, &b).expect("O is not linearly independent")
+        solve_linear_system(&self.basis, &b).expect("O is not linearly independent")
     }
 
     pub fn to_z_basis_int(&self, a: &Algebraic) -> Vec<BigInt> {
