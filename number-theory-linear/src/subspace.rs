@@ -1,11 +1,16 @@
 use num::rational::Ratio;
 use num::traits::{Inv, NumAssign};
-use num::{Integer, Zero};
+use num::{Integer, One, Zero};
 
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum IIMError {
     LinearlyDependent,
     NotInImage,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug)]
+pub enum SupplementError {
+    InsufficientRank,
 }
 
 /// Algorithm 2.3.5 (Inverse Image Matrix) in [Cohen].
@@ -89,6 +94,49 @@ pub fn iim<Int: Clone + Integer + NumAssign>(
     Ok(xmat)
 }
 
+/// Algorithm 2.3.6 (Supplement a Basis) in [Cohen].
+///
+/// mmat: k * n
+#[allow(clippy::needless_range_loop)]
+pub fn supplement_basis<Int: Clone + Integer + NumAssign>(
+    mmat: &[Vec<Ratio<Int>>],
+) -> Result<Vec<Vec<Ratio<Int>>>, SupplementError> {
+    let k = mmat.len();
+    let n = mmat[0].len();
+    let mmat_orig = mmat;
+    let mut mmat = mmat_orig.to_vec();
+    let mut bmat = vec![vec![Ratio::<Int>::zero(); n]; n];
+    for i in 0..n {
+        bmat[i][i] = Ratio::<Int>::one();
+    }
+    for s in 0..k {
+        let mut t = n;
+        for i in s..n {
+            if !mmat[s][i].is_zero() {
+                t = i;
+                break;
+            }
+        }
+        if t >= n {
+            return Err(SupplementError::InsufficientRank);
+        }
+        let d = mmat[s][t].clone().inv();
+        bmat[t] = bmat[s].clone();
+        bmat[s] = mmat_orig[s].clone();
+        for j in s + 1..k {
+            mmat[j].swap(s, t);
+            let coef_js = &mmat[j][s] * &d;
+            for i in 0..n {
+                if i != s && i != t {
+                    let tmp = &mmat[s][i] * &coef_js;
+                    mmat[j][i] -= tmp;
+                }
+            }
+        }
+    }
+    Ok(bmat)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,5 +180,31 @@ mod tests {
         let vmat = vec![vec![1.into(), 0.into(), (-1).into()]];
         // vmat = (5 -2) mmat
         assert_eq!(iim(&mmat, &vmat), Ok(vec![vec![5.into(), (-2).into()]]));
+    }
+
+    #[test]
+    fn supplement_basis_0() {
+        let mmat = vec![
+            vec![1.into(), 0.into(), 1.into()],
+            vec![2.into(), 0.into(), 3.into()],
+        ];
+        let result = supplement_basis(&mmat).unwrap();
+        assert_eq!(result[..2], mmat);
+    }
+
+    #[test]
+    fn supplement_basis_1() {
+        let mmat = vec![vec![1.into(), 0.into()], vec![2.into(), 1.into()]];
+        assert_eq!(supplement_basis(&mmat), Ok(mmat));
+    }
+
+    #[test]
+    fn supplement_basis_2() {
+        let mmat = vec![
+            vec![1.into(), 0.into(), 1.into()],
+            vec![2.into(), 0.into(), 2.into()],
+        ];
+        let result = supplement_basis(&mmat);
+        assert_eq!(result, Err(SupplementError::InsufficientRank));
     }
 }
