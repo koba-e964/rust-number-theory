@@ -8,6 +8,8 @@ mod solve_linear_system;
 pub mod cholesky;
 pub mod hnf;
 pub mod matrix;
+pub mod subspace;
+/// Functions related to subspaces of vector spaces over a field.
 pub mod triangular;
 
 pub use determinant::determinant;
