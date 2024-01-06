@@ -11,6 +11,7 @@ use crate::{
     polynomial::Polynomial,
 };
 
+// 4.8.2 of [Cohen]. Only works when not (p | (Z_K : Z[theta])). Returns a list of pairs (P, e).
 pub fn decompose<'mul>(
     theta: &Algebraic,
     int_basis: &Order,

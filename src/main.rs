@@ -3,6 +3,7 @@ use num::BigInt;
 use num::ToPrimitive;
 use rust_number_theory::poly_mod::factorize_mod_p;
 use rust_number_theory::poly_z;
+use rust_number_theory::prime_decomp::decompose;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -237,6 +238,54 @@ fn main() {
                     factors.push(Factor {
                         factor_vec,
                         factor_str,
+                        e,
+                    });
+                }
+                data.push(FactorizationData {
+                    modulus: p.into(),
+                    factors,
+                });
+            }
+            println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            continue;
+        }
+        if to_find == "prime-decomposition" {
+            let (polynomial, primes) = match input_config.input {
+                Input::PolynomialAndPrimes {
+                    ref polynomial,
+                    ref primes,
+                } => (
+                    polynomial_unbridge(polynomial.clone()),
+                    primes
+                        .iter()
+                        .map(|p| p.clone().into())
+                        .collect::<Vec<BigInt>>(),
+                ),
+                _ => {
+                    eprintln!("factorization-mod-p accepts (polynomial, primes) only");
+                    continue;
+                }
+            };
+            #[derive(Serialize)]
+            struct Factor {
+                norm: BigIntBridge,
+                e: usize,
+            }
+            #[derive(Serialize)]
+            struct FactorizationData {
+                modulus: BigIntBridge,
+                factors: Vec<Factor>,
+            }
+            let mut data = vec![];
+            for p in primes {
+                let mut factors = vec![];
+                let theta = Algebraic::new(polynomial.clone());
+                let int_basis = integral_basis::find_integral_basis(&theta);
+                let mult_table = int_basis.get_mult_table(&theta);
+                let result = decompose(&theta, &int_basis, &mult_table, &p);
+                for (id, e) in result {
+                    factors.push(Factor {
+                        norm: id.norm().into(),
                         e,
                     });
                 }
