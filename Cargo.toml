@@ -5,8 +5,8 @@ authors = ["koba-e964 <3303362+koba-e964@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
-# This rand dependency must be 0.8 because num-bigint:0.4.0 depends on rand:0.8.
-# https://github.com/rust-num/num-bigint/blob/num-bigint-0.4.0/Cargo.toml#L54
+# This rand dependency must be 0.8 because num-bigint:0.4.4 depends on rand:0.8.
+# https://github.com/rust-num/num-bigint/blob/num-bigint-0.4.4/Cargo.toml#L54
 rand = "0.8"
 serde_yaml = "0.8"
 toml = "0.5"
