@@ -65,9 +65,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "0.4.7"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
+checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 
 [[package]]
 name = "libc"
@@ -275,11 +275,11 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.63"
+version = "1.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43535db9747a4ba938c0ce0a98cc631a46ebf943c9e1d604e091df6007620bf6"
+checksum = "176e46fa42316f18edd598015a5166857fc835ec732f5215eac6b7bdbf0a84f4"
 dependencies = [
- "indexmap 1.9.2",
+ "indexmap 2.1.0",
  "itoa",
  "ryu",
  "serde",
