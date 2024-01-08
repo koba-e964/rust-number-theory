@@ -1,3 +1,5 @@
+use std::ops::Neg;
+
 use num::rational::Ratio;
 use num::traits::{Inv, NumAssign};
 use num::{Integer, One, Zero};
@@ -11,6 +13,80 @@ pub enum IIMError {
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub enum SupplementError {
     InsufficientRank,
+}
+
+fn modpow<Int: Clone + Integer>(x: &Int, e: &Int, modulus: &Int) -> Int {
+    let mut e = e.clone();
+    let mut product = Int::one();
+    let mut current = x.clone();
+    let two = Int::one() + Int::one();
+    while e > Int::zero() {
+        if e.is_odd() {
+            product = product * current.clone() % modulus.clone();
+        }
+        current = current.clone() * current % modulus.clone();
+        e = e.div_floor(&two);
+    }
+    product
+}
+
+fn modinv<Int: Clone + Integer>(x: &Int, p: &Int) -> Int {
+    let two = Int::one() + Int::one();
+    modpow(x, &(p.clone() - two), p)
+}
+
+/// Algorithm 2.3.2 (Image of a Matrix) in [Cohen] for F_p.
+#[allow(clippy::needless_range_loop)]
+pub fn image_mod_p<Int: Clone + Integer + NumAssign + Neg<Output = Int>>(
+    matcp: &[Vec<Int>],
+    p: &Int,
+) -> Vec<Vec<Int>> {
+    let mut mat = matcp.to_vec();
+    let n = mat.len();
+    let m = mat[0].len();
+    let mut r = 0;
+    let mut c = vec![0; m];
+    let mut d = vec![0; n];
+    for k in 0..n {
+        // 2. [Scan Column]
+        let j = (0..m).position(|j| !mat[k][j].is_zero() && c[j].is_zero());
+        if let Some(j) = j {
+            // 3. [Eliminate]
+            let dd = p.clone() - modinv(&mat[k][j], p);
+            mat[k][j] = p.clone() - Int::one();
+            for s in k + 1..n {
+                mat[s][j] =
+                    core::mem::replace(&mut mat[s][j], Int::zero()) * dd.clone() % p.clone();
+            }
+            for i in 0..m {
+                if i == j {
+                    continue;
+                }
+                let dd = core::mem::replace(&mut mat[k][i], Int::zero());
+                for s in k + 1..n {
+                    let tmp = core::mem::replace(&mut mat[s][j], Int::zero()) * dd.clone();
+                    let tmp = tmp + core::mem::replace(&mut mat[s][i], Int::zero());
+                    let tmp = tmp % p.clone();
+                    mat[s][i] = tmp;
+                }
+            }
+            c[j] = k + 1;
+            d[k] = j + 1;
+        } else {
+            d[k] = 0;
+            r += 1;
+        }
+    }
+    // 5. [Output image]
+    // dim = n - r
+    assert_eq!(c.iter().filter(|&&val| val != 0).count(), n - r);
+    let mut out = vec![];
+    for i in 0..m {
+        if c[i] != 0 {
+            out.push(matcp[c[i] - 1].clone());
+        }
+    }
+    out
 }
 
 /// Algorithm 2.3.5 (Inverse Image Matrix) in [Cohen].
@@ -140,6 +216,24 @@ pub fn supplement_basis<Int: Clone + Integer + NumAssign>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn image_works_0() {
+        let mat = vec![vec![1i32, 3], vec![2, 1]];
+        assert_eq!(image_mod_p(&mat, &5), vec![vec![1, 3]]);
+    }
+
+    #[test]
+    fn image_works_1() {
+        let mat = vec![vec![1i32, 3, 2], vec![2, 1, 3], vec![0, 0, 1]];
+        assert_eq!(image_mod_p(&mat, &5), vec![vec![1, 3, 2], vec![2, 1, 3]]);
+    }
+
+    #[test]
+    fn image_works_2() {
+        let mat = vec![vec![1i32, 3, 2], vec![0; 3], vec![0; 3], vec![0; 3]];
+        assert_eq!(image_mod_p(&mat, &5), vec![vec![1, 3, 2]]);
+    }
 
     #[test]
     fn iim_works_0() {
