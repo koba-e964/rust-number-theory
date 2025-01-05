@@ -1,0 +1,9 @@
+# Find the factorization of x^14 + x^7 + 1.
+# To feed this file to the executable, run `cargo run data/input-factorization-polynomial-2.toml'.
+
+to_find = [
+    'factorization',
+]
+
+[input]
+polynomials = [['1', '0', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0', '1']]

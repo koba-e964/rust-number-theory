@@ -1,0 +1,7 @@
+# Find the factorization of x^4 + 9x^3 + 16x^2 - x - 3 .
+# To feed this file to the executable, run `cargo run data/input-factorization-polynomial-2.toml'.
+
+to_find = ['factorization']
+
+[input]
+polynomials = [['-3', '-1', '16', '9', '1']]
