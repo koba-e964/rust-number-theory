@@ -1,10 +1,10 @@
-use std::io;
 use std::io::Write;
 use std::str::FromStr;
+use std::{io, time::Instant};
 
 use clap::Parser;
 use num::BigInt;
-use rust_number_theory::ecm;
+use rust_number_theory::ecm::{self, EcmStats};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -39,11 +39,18 @@ fn main() {
     };
 
     let value = BigInt::from_str(&value).unwrap();
-    let result = ecm::factorize(&value);
-    present(cli, result);
+    let start = Instant::now();
+    let (result, ecm_stats) = ecm::factorize_verbose(&value, cli.verbose);
+    let elapsed = start.elapsed();
+    present(cli, result, ecm_stats, elapsed);
 }
 
-fn present(cli: Cli, result: Vec<(BigInt, u64)>) {
+fn present(
+    cli: Cli,
+    result: Vec<(BigInt, u64)>,
+    ecm_stats: EcmStats,
+    elapsed: std::time::Duration,
+) {
     if cli.json {
         #[derive(serde::Serialize)]
         struct Entry {
@@ -60,7 +67,31 @@ fn present(cli: Cli, result: Vec<(BigInt, u64)>) {
                 is_composite: false,
             });
         }
-        println!("{}", serde_json::to_string_pretty(&entries).unwrap(),);
+        let mut object = serde_json::Map::new();
+        object.insert(
+            "entries".to_string(),
+            serde_json::Value::Array(
+                entries
+                    .into_iter()
+                    .map(|x| serde_json::to_value(x).unwrap())
+                    .collect(),
+            ),
+        );
+        if cli.verbose {
+            #[derive(serde::Serialize)]
+            struct Data {
+                curve_count: u64,
+                time: f64,
+                average: f64,
+            }
+            let data = Data {
+                curve_count: ecm_stats.curve_count,
+                time: elapsed.as_secs_f64(),
+                average: elapsed.as_secs_f64() / ecm_stats.curve_count as f64,
+            };
+            object.insert("stats".to_string(), serde_json::to_value(data).unwrap());
+        }
+        println!("{}", serde_json::to_string_pretty(&object).unwrap(),);
     } else {
         let mut first = true;
         for (p, e) in result {

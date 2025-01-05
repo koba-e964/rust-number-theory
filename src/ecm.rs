@@ -6,9 +6,16 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Rem, Sub};
 use crate::perfect_power::perfect_power;
 use crate::prime;
 
+pub struct EcmStats {
+    pub curve_count: u64,
+}
+
 /// Factorizes an integer.
 /// This function calls other functions as subroutines.
 pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
+    factorize_verbose(x, false).0
+}
+pub fn factorize_verbose(x: &BigInt, verbose: bool) -> (Vec<(BigInt, u64)>, EcmStats) {
     if x <= &BigInt::zero() {
         panic!("x <= 0: x = {}", x);
     }
@@ -17,6 +24,7 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
 
     let mut stack = vec![(x.clone(), 1)];
     let mut map = HashMap::new();
+    let mut count = 0;
     while let Some((now, multiplicity)) = stack.pop() {
         if now <= BigInt::one() {
             continue;
@@ -32,14 +40,15 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
                 continue;
             }
         }
-        let fac = ecm(
+        let (fac, nowcount) = ecm(
             &now,
             ECMConfig {
                 b1: b,
                 b2: 100 * b,
-                verbose: false,
+                verbose,
             },
         );
+        count += nowcount;
         if fac == BigInt::one() {
             stack.push((now, multiplicity));
             continue;
@@ -50,7 +59,7 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
     }
     let mut result: Vec<(BigInt, u64)> = map.into_iter().collect();
     result.sort();
-    result
+    (result, EcmStats { curve_count: count })
 }
 
 /// Select appropriate B1.
@@ -74,7 +83,7 @@ pub struct ECMConfig {
 
 /// Finds a factor.
 #[allow(clippy::many_single_char_names)]
-pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
+pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
     debug_assert!(!prime::is_prime(n));
 
     let mut rng = rand::thread_rng();
@@ -82,9 +91,6 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
     let mut count = 0u64;
 
     loop {
-        if count >= 100 {
-            return BigInt::one();
-        }
         count += 1;
         if conf.verbose {
             eprintln!("Trying curve {}, B1 = {}, B2 = {}", count, conf.b1, conf.b2);
@@ -106,7 +112,10 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> BigInt {
                 continue;
             }
             debug_assert_eq!(n % &fac, BigInt::zero());
-            return fac;
+            if conf.verbose {
+                eprintln!("Found factor after {count} trials");
+            }
+            return (fac, count);
         }
     }
 }
@@ -121,13 +130,18 @@ fn ecm_oneshot(mut pt: Point<BigInt>, curve: Ell<BigInt>, b1: u64, b2: u64) -> R
     // Step 2: try all primes in range (b1, b2]
     for &init in &[b1.saturating_sub(1) / 6 * 6 + 1, (b1 + 1) / 6 * 6 - 1] {
         let mut cur_e = init;
+        let p6 = {
+            let p2 = pt.add(&pt, &curve)?;
+            let p4 = p2.add(&p2, &curve)?;
+            p2.add(&p4, &curve)?
+        };
         pt = pt.mul(init.into(), &curve)?;
         if pt.is_inf() {
             return Ok(());
         }
         while cur_e <= b2 {
             cur_e += 6;
-            pt = pt.mul(cur_e.into(), &curve)?;
+            pt = pt.add(&p6, &curve)?;
             if pt.is_inf() {
                 return Ok(());
             }
@@ -223,8 +237,11 @@ where
             if &e % 2 == Int::one() {
                 sum = sum.add(&cur, curve)?;
             }
-            cur = cur.add(&cur, curve)?;
             e /= 2;
+            if e == Int::zero() {
+                break;
+            }
+            cur = cur.add(&cur, curve)?;
         }
         Ok(sum)
     }
@@ -380,7 +397,8 @@ mod tests {
                 b2: 100000,
                 verbose: false,
             },
-        );
+        )
+        .0;
         assert_eq!(a % factor, BigInt::zero());
     }
     #[test]
@@ -395,7 +413,8 @@ mod tests {
                 b2: 100000,
                 verbose: false,
             },
-        );
+        )
+        .0;
         assert_eq!(a % factor, BigInt::zero());
     }
 
@@ -413,7 +432,8 @@ mod tests {
                 b2: 100000,
                 verbose: false,
             },
-        );
+        )
+        .0;
         eprintln!("factor={}", factor);
         assert_eq!(a % factor, BigInt::zero());
     }
