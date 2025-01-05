@@ -49,3 +49,8 @@ jobs:
         run: cargo expand --lib | wc
       - name: cargo bloat
         run: cargo bloat --release
+      - name: Try all files
+        run: |
+          for file in data/*; do
+            cargo run --release -- ${file}
+          done
