@@ -34,3 +34,8 @@ $ cargo run data/input-discriminant.yml
   "discriminant": "-1132"
 }
 ```
+
+## Factorization
+```
+cargo install --path . --bin rfactor
+```

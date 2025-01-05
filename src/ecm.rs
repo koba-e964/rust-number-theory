@@ -13,7 +13,7 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
         panic!("x <= 0: x = {}", x);
     }
 
-    let b = 1000u64; // TODO
+    let b = select_b(x);
 
     let mut stack = vec![(x.clone(), 1)];
     let mut map = HashMap::new();
@@ -51,6 +51,17 @@ pub fn factorize(x: &BigInt) -> Vec<(BigInt, u64)> {
     let mut result: Vec<(BigInt, u64)> = map.into_iter().collect();
     result.sort();
     result
+}
+
+/// Select appropriate B1.
+fn select_b(n: &BigInt) -> u64 {
+    if n <= &BigInt::from(1000u64) {
+        return 4;
+    }
+    let lnx = n.bits() as f64 * 2.0f64.ln() / 2.0;
+    let lnlnx = lnx.ln();
+    let b = (lnx * lnlnx / 2.0).sqrt().exp(); // L(p)^{1/sqrt(2)}
+    b as u64
 }
 
 /// Configuration for ECM.

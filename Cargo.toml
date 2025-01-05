@@ -5,6 +5,7 @@ authors = ["koba-e964 <3303362+koba-e964@users.noreply.github.com>"]
 edition = "2021"
 publish = false
 rust-version = "1.74"
+default-run = "rust-number-theory"
 
 [dependencies]
 # This rand dependency must be 0.8 because num-bigint:0.4.4 depends on rand:0.8.
@@ -35,5 +36,16 @@ path = "./number-theory-linear"
 version = "0.1"
 path = "./number-theory-elementary"
 
+[dependencies.clap]
+version = "4"
+features = ["derive"]
+
 [workspace]
 members = ["number-theory-elementary", "number-theory-linear"]
+
+[[bin]]
+name = "rfactor"
+
+[profile.release-with-symbols]
+inherits = "release"
+strip = false
