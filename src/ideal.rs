@@ -82,7 +82,7 @@ impl<'mul> Ideal<'mul> {
     }
 }
 
-impl<'a, 'mul> Add for &'a Ideal<'mul> {
+impl<'mul> Add for &Ideal<'mul> {
     type Output = Ideal<'mul>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -98,7 +98,7 @@ impl<'a, 'mul> Add for &'a Ideal<'mul> {
     }
 }
 
-impl<'a, 'mul> Mul for &'a Ideal<'mul> {
+impl<'mul> Mul for &Ideal<'mul> {
     type Output = Ideal<'mul>;
 
     /// O(deg^5)
@@ -144,7 +144,7 @@ impl<'mul> FracIdeal<'mul> {
 
 /// A fractional ideal represented in two-element form.
 /// Cf. http://www.kurims.kyoto-u.ac.jp/EMIS/journals/JTNB/2004-1/Belabas.pdf, 6.13
-pub struct TwoElementFracIdeal(BigRational, Algebraic);
+pub struct TwoElementFracIdeal(pub BigRational, pub Algebraic);
 
 #[cfg(test)]
 mod tests {

@@ -63,7 +63,7 @@ impl Add for Algebraic {
         }
     }
 }
-impl<'a> Add for &'a Algebraic {
+impl Add for &Algebraic {
     type Output = Algebraic;
     fn add(self, other: Self) -> Algebraic {
         Algebraic {
@@ -82,7 +82,7 @@ impl Sub for Algebraic {
         }
     }
 }
-impl<'a> Sub for &'a Algebraic {
+impl Sub for &Algebraic {
     type Output = Algebraic;
     fn sub(self, other: Self) -> Algebraic {
         Algebraic {
@@ -141,7 +141,7 @@ impl Mul for Algebraic {
         }
     }
 }
-impl<'a> Mul for &'a Algebraic {
+impl Mul for &Algebraic {
     type Output = Algebraic;
     fn mul(self, other: Self) -> Algebraic {
         Algebraic {
@@ -151,7 +151,7 @@ impl<'a> Mul for &'a Algebraic {
     }
 }
 
-impl<'a> Pow<u64> for &'a Algebraic {
+impl Pow<u64> for &Algebraic {
     type Output = Algebraic;
     fn pow(self, mut e: u64) -> Self::Output {
         let mut cur = self.clone();
@@ -167,7 +167,7 @@ impl<'a> Pow<u64> for &'a Algebraic {
     }
 }
 
-impl<'a> Pow<BigInt> for &'a Algebraic {
+impl Pow<BigInt> for &Algebraic {
     type Output = Algebraic;
     fn pow(self, mut e: BigInt) -> Self::Output {
         let mut cur = self.clone();

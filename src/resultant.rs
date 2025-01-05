@@ -19,7 +19,7 @@ pub fn resultant_rational(a: &Polynomial<BigRational>, b: &Polynomial<BigRationa
     }
     let (_, r) = div_rem_bigrational(a, b);
     let r_deg = r.deg();
-    if r_deg == usize::max_value() {
+    if r_deg == usize::MAX {
         return BigRational::zero();
     }
     let mut sub = resultant_rational(b, &r);

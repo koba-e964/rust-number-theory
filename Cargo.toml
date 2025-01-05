@@ -3,6 +3,8 @@ name = "rust-number-theory"
 version = "0.1.0"
 authors = ["koba-e964 <3303362+koba-e964@users.noreply.github.com>"]
 edition = "2021"
+publish = false
+rust-version = "1.74"
 
 [dependencies]
 # This rand dependency must be 0.8 because num-bigint:0.4.4 depends on rand:0.8.

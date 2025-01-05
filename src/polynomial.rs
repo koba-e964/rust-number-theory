@@ -17,7 +17,7 @@ impl<R> Polynomial<R> {
     // If 0, returns usize::max_value().
     pub fn deg(&self) -> usize {
         if self.dat.is_empty() {
-            usize::max_value()
+            usize::MAX
         } else {
             self.dat.len() - 1
         }
@@ -136,7 +136,7 @@ impl<R: AddAssign + Zero + MulAssign + Clone> Polynomial<R> {
     }
 }
 
-impl<'a, R: AddAssign + Clone + Zero> Add for &'a Polynomial<R> {
+impl<R: AddAssign + Clone + Zero> Add for &Polynomial<R> {
     type Output = Polynomial<R>;
     fn add(self, other: Self) -> Polynomial<R> {
         if self.dat.is_empty() {
@@ -188,14 +188,14 @@ impl<R: Neg<Output = R>> Neg for Polynomial<R> {
         Polynomial { dat }
     }
 }
-impl<'a, R: Neg<Output = R> + Clone> Neg for &'a Polynomial<R> {
+impl<R: Neg<Output = R> + Clone> Neg for &Polynomial<R> {
     type Output = Polynomial<R>;
     fn neg(self) -> Polynomial<R> {
         -self.clone()
     }
 }
 
-impl<'a, R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &'a Polynomial<R> {
+impl<R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for &Polynomial<R> {
     type Output = Polynomial<R>;
     fn sub(self, other: Self) -> Polynomial<R> {
         if self.dat.is_empty() {
@@ -233,7 +233,7 @@ impl<R: AddAssign + SubAssign + Neg<Output = R> + Clone + Zero> Sub for Polynomi
     }
 }
 
-impl<'a, R: AddAssign + Clone + Zero> Mul for &'a Polynomial<R>
+impl<R: AddAssign + Clone + Zero> Mul for &Polynomial<R>
 where
     for<'b> &'b R: Mul<Output = R>,
 {
