@@ -2,7 +2,9 @@ use num::BigInt;
 
 use crate::{algebraic::Algebraic, ideal::Ideal, mult_table::MultTable, order::Order};
 
-pub mod simple;
+/// Buchmann-Lenstra's algorithm for prime decomposition.
+mod bl;
+mod simple;
 
 // Decompose a prime into prime ideals in Z_Q(theta).
 pub fn decompose<'mul>(
