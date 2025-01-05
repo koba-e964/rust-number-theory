@@ -1,4 +1,5 @@
 use num::bigint::RandBigInt;
+use num::Integer;
 use num::{BigInt, One, Signed, Zero};
 use std::collections::HashMap;
 use std::ops::{AddAssign, Div, Mul, Rem, Sub};
@@ -259,13 +260,13 @@ fn extgcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
         extgcd_division(a, b)
     }
 }
+
 #[allow(clippy::many_single_char_names)]
 fn extgcd_division(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
     if b == &BigInt::zero() {
         return (a.clone(), BigInt::one(), BigInt::zero());
     }
-    let q = a / b;
-    let r = a - &(b * &q);
+    let (q, r) = a.div_rem(b);
     let (g, x, y) = extgcd_division(b, &r);
     // bx + ry = g
     // bx + (a - bq)y = g
@@ -273,6 +274,7 @@ fn extgcd_division(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
     let newy = x - &q * &y;
     (g, y, newy)
 }
+
 fn extgcd_binary(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
     if b == &BigInt::zero() {
         return (a.clone(), BigInt::one(), BigInt::zero());
@@ -281,11 +283,11 @@ fn extgcd_binary(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
         return (b.clone(), BigInt::zero(), BigInt::one());
     }
     if a < &BigInt::zero() {
-        let (g, x, y) = extgcd(&-a, b);
+        let (g, x, y) = extgcd_binary(&-a, b);
         return (g, -x, y);
     }
     if b < &BigInt::zero() {
-        let (g, x, y) = extgcd(a, &-b);
+        let (g, x, y) = extgcd_binary(a, &-b);
         return (g, x, -y);
     }
     let za = a.trailing_zeros().unwrap_or(0);
@@ -303,16 +305,16 @@ fn extgcd_binary(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
 }
 
 fn extgcd_1(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
-    debug_assert!(a % 2 == BigInt::one(), "{a}, {b}");
-    if b % 2 == BigInt::zero() {
+    debug_assert!(a.is_odd(), "{a}, {b}");
+    if b.is_even() {
         let b1 = b >> 1;
         let (g, mut x, mut y) = extgcd_1(a, &b1);
-        if &y % 2 == BigInt::zero() {
+        if y.is_even() {
             y >>= 1;
         } else {
             x -= b1;
             y += a;
-            debug_assert_eq!(&y % 2, BigInt::zero());
+            debug_assert!(y.is_even(), "{y}");
             y >>= 1;
         }
         return (g, x, y);
