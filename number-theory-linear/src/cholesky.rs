@@ -45,10 +45,12 @@ impl Cholesky {
         val
     }
 
-    /// Algorithm 2.7.5 in [Cohen]
+    /// Algorithm 2.7.5 in \[Cohen\]
+    ///
     /// Returns all non-zero vectors x that satisfy (x, Qx) <= c
     /// Only one of the two vectors x, -x is returned.
-    /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+    ///
+    /// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
     pub fn find_short_vectors(&self, c: f64) -> Vec<(f64, Vec<i64>)> {
         let mut result = vec![];
         Self::dfs(

@@ -48,7 +48,7 @@ impl Order {
         .hnf_reduce()
     }
 
-    /// Returns Z[theta].
+    /// Returns Z\[theta\].
     pub fn singly_gen(theta: &Algebraic) -> Self {
         let deg = theta.deg();
         let min_poly = &theta.min_poly;
@@ -205,7 +205,7 @@ pub fn trivial_order_monic(theta: &Algebraic) -> Order {
     Order { basis }.hnf_reduce()
 }
 
-/// Returns Z[theta] \cap Z[1 / theta].
+/// Returns Z\[theta\] \cap Z\[1 / theta\].
 pub fn non_monic_initial_order(theta: &Algebraic) -> Order {
     let deg = theta.deg();
     let mut basis = vec![vec![BigRational::zero(); deg]; deg];

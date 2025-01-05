@@ -9,7 +9,7 @@ pub struct Algebraic {
 }
 
 impl Algebraic {
-    /// minimal_poly should be irreducible in Z[x].
+    /// minimal_poly should be irreducible in Z\[x\].
     pub fn new(minimal_poly: Polynomial<BigInt>) -> Self {
         Algebraic {
             min_poly: minimal_poly,

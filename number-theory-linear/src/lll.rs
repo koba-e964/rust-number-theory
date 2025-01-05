@@ -29,9 +29,10 @@ fn to_real(r: R) -> K {
     r.to_f64().unwrap()
 }
 
-/// Algorithm 2.6.3 in [Cohen]
+/// Algorithm 2.6.3 in \[Cohen\]
 /// The returned value (lll, h) satisfies lll = h * basis (as matrices).
-/// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+///
+/// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 pub fn lll(basis: &[Vec<f64>]) -> (Vec<Vec<f64>>, Vec<Vec<BigInt>>) {
     let n = basis.len();
     let m = basis[0].len();

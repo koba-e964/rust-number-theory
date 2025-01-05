@@ -37,7 +37,7 @@ impl CEmbeddings {
     pub fn deg(&self) -> usize {
         self.basis[0].len()
     }
-    /// Computes the idx-th embedding of num[0]*w[0] + ... num[n-1]*w[n-1].
+    /// Computes the idx-th embedding of `num[0]*w[0] + ... num[n-1]*w[n-1]`.
     #[allow(clippy::needless_range_loop)]
     pub fn compute(&self, idx: usize, num: &[BigInt]) -> Complex<f64> {
         let mut val = Complex::new(0.0, 0.0);
@@ -47,7 +47,7 @@ impl CEmbeddings {
         }
         val
     }
-    /// Returns the idx-th embedding of w[k].
+    /// Returns the idx-th embedding of `w[k]`.
     pub fn get(&self, idx: usize, k: usize) -> Complex<f64> {
         self.basis[idx][k]
     }

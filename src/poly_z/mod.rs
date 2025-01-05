@@ -97,7 +97,7 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
             let mut prod: Polynomial<BigInt> = Polynomial::from_mono(lca.clone());
             #[allow(clippy::needless_range_loop)]
             for i in 0..lifted.len() {
-                if (bits & 1 << i) != 0 {
+                if (bits & (1 << i)) != 0 {
                     prod = poly_mod::poly_mod(&(&prod * &lifted[i]), &pe);
                 }
             }
@@ -113,7 +113,7 @@ fn get_factors_of_squarefree(a: &Polynomial<BigInt>) -> Vec<Polynomial<BigInt>> 
             result.push(ppprod.clone());
             a = div_exact(&a, &ppprod).expect("This division will always succeed");
             for i in (0..lifted.len()).rev() {
-                if (bits & 1 << i) != 0 {
+                if (bits & (1 << i)) != 0 {
                     lifted.remove(i);
                 }
             }

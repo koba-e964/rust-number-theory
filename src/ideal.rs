@@ -143,7 +143,7 @@ impl<'mul> FracIdeal<'mul> {
 }
 
 /// A fractional ideal represented in two-element form.
-/// Cf. http://www.kurims.kyoto-u.ac.jp/EMIS/journals/JTNB/2004-1/Belabas.pdf, 6.13
+/// Cf. <http://www.kurims.kyoto-u.ac.jp/EMIS/journals/JTNB/2004-1/Belabas.pdf>, 6.13
 pub struct TwoElementFracIdeal(pub BigRational, pub Algebraic);
 
 #[cfg(test)]

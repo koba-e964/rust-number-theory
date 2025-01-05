@@ -35,7 +35,7 @@ fn modinv<Int: Clone + Integer>(x: &Int, p: &Int) -> Int {
     modpow(x, &(p.clone() - two), p)
 }
 
-/// Algorithm 2.3.2 (Image of a Matrix) in [Cohen] for F_p.
+/// Algorithm 2.3.2 (Image of a Matrix) in \[Cohen\] for F_p.
 #[allow(clippy::needless_range_loop)]
 pub fn image_mod_p<Int: Clone + Integer + NumAssign + Neg<Output = Int>>(
     matcp: &[Vec<Int>],
@@ -89,7 +89,7 @@ pub fn image_mod_p<Int: Clone + Integer + NumAssign + Neg<Output = Int>>(
     out
 }
 
-/// Algorithm 2.3.5 (Inverse Image Matrix) in [Cohen].
+/// Algorithm 2.3.5 (Inverse Image Matrix) in \[Cohen\].
 ///
 /// mmat: n * m
 ///
@@ -97,9 +97,9 @@ pub fn image_mod_p<Int: Clone + Integer + NumAssign + Neg<Output = Int>>(
 ///
 /// Finds xmat: r * n s.t. vmat = xmat mmat or reports that such xmat does not exist.
 ///
-/// Note that matrices are transposed in this implementation with respect to the algorithm in [Cohen].
+/// Note that matrices are transposed in this implementation with respect to the algorithm in \[Cohen\].
 ///
-/// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+/// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 #[allow(clippy::needless_range_loop)]
 pub fn iim<Int: Clone + Integer + NumAssign>(
     mmat: &[Vec<Ratio<Int>>],
@@ -170,7 +170,7 @@ pub fn iim<Int: Clone + Integer + NumAssign>(
     Ok(xmat)
 }
 
-/// Algorithm 2.3.6 (Supplement a Basis) in [Cohen].
+/// Algorithm 2.3.6 (Supplement a Basis) in \[Cohen\].
 ///
 /// mmat: k * n
 #[allow(clippy::needless_range_loop)]

@@ -1,6 +1,8 @@
 /// Computes a Kronecker-Jacobi symbol.
 ///
-/// This algorithm is Algorithm 1.4.10 in [Cohen].
+/// This algorithm is Algorithm 1.4.10 in \[Cohen\].
+///
+/// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 pub fn kronecker_symbol_i64(mut a: i64, mut b: i64) -> i32 {
     if b == 0 {
         return if a == 1 || a == -1 { 1 } else { 0 };

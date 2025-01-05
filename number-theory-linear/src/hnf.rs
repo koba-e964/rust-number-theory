@@ -5,10 +5,10 @@ use std::fmt::Display;
 
 /// A matrix guaranteed to be in HNF.
 ///
-/// Unlike the convention in [Cohen], an HNF is represented as a *lower*-triangular matrix and constructed by using only elementary *row* operations.
+/// Unlike the convention in \[Cohen\], an HNF is represented as a *lower*-triangular matrix and constructed by using only elementary *row* operations.
 /// This convention is justified as follows: it is natural to treat an HNF as a sequence of basis vectors.
-/// Sequences of vectors are indexed as a[i][j]; in this indexing,
-/// a[i] is treated as a row vector in the ordinary matrix indexing.
+/// Sequences of vectors are indexed as `a[i][j]`; in this indexing,
+/// `a[i]` is treated as a row vector in the ordinary matrix indexing.
 /// Therefore, it is better understood as a sequence of row vectors than a sequence of column vectors.
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,10 +33,10 @@ impl HNF {
         }
         HNF::new(&mat)
     }
-    /// Algorithm 2.4.4 in [Cohen]
+    /// Algorithm 2.4.4 in \[Cohen\]
     /// Computes the HNF of a given matrix.
     ///
-    /// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+    /// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
     pub fn new(a: &[Vec<BigInt>]) -> HNF {
         hnf_with_ker(a).0
     }
@@ -111,10 +111,10 @@ pub fn hnf_with_ker(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>) {
     (w, u)
 }
 
-/// Algorithm 2.4.4 in [Cohen]
+/// Algorithm 2.4.4 in \[Cohen\]
 /// Given a n * m matrix A, Computes the HNF B of A, an n * n matrix U s.t. B = UA and dim ker A.
 ///
-/// [Cohen]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
+/// \[Cohen\]: Cohen, Henri. A course in computational algebraic number theory. Vol. 138. Springer Science & Business Media, 2013.
 #[allow(clippy::many_single_char_names)]
 pub fn hnf_with_u(a: &[Vec<BigInt>]) -> (HNF, Vec<Vec<BigInt>>, usize) {
     if a.is_empty() {
