@@ -1,7 +1,7 @@
 use num::bigint::RandBigInt;
 use num::{BigInt, One, Signed, Zero};
 use std::collections::HashMap;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Rem, Sub};
+use std::ops::{AddAssign, Div, Mul, Rem, Sub};
 
 use crate::perfect_power::perfect_power;
 use crate::prime;
@@ -120,7 +120,7 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
     }
 }
 
-fn ecm_oneshot(mut pt: Point<BigInt>, curve: Ell<BigInt>, b1: u64, b2: u64) -> Result<(), BigInt> {
+fn ecm_oneshot(mut pt: Point, curve: Ell, b1: u64, b2: u64) -> Result<(), BigInt> {
     for k in 1..b1 + 1 {
         pt = pt.mul(k.into(), &curve)?;
         if pt.is_inf() {
@@ -151,45 +151,24 @@ fn ecm_oneshot(mut pt: Point<BigInt>, curve: Ell<BigInt>, b1: u64, b2: u64) -> R
 }
 
 /// Projective coordinates
-/// It is caller's responsibility to ensure Int does not overflow.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Point<Int> {
-    x: Int,
-    y: Int,
-    z: Int,
+pub struct Point {
+    x: BigInt,
+    y: BigInt,
+    z: BigInt,
 }
 
 // y^2 = x^3 + ax + b (mod n)
 // not (2 | n)
 // In the actual computation, b is irrelevant.
 #[derive(Debug)]
-struct Ell<Int> {
-    a: Int,
-    n: Int,
+struct Ell {
+    a: BigInt,
+    n: BigInt,
 }
 
-impl<
-        Int: Clone
-            + Zero
-            + One
-            + Ord
-            + for<'a> std::ops::AddAssign<&'a Int>
-            + DivAssign<i64>
-            + Sub<Output = Int>
-            + Mul<i64, Output = Int>
-            + Signed
-            + Eq,
-    > Point<Int>
-where
-    for<'a> &'a Int: Add<&'a Int, Output = Int>
-        + Sub<&'a Int, Output = Int>
-        + Mul<&'a Int, Output = Int>
-        + Div<&'a Int, Output = Int>
-        + Rem<&'a Int, Output = Int>
-        + Rem<i64, Output = Int>
-        + Mul<i64, Output = Int>,
-{
-    fn add(&self, other: &Self, curve: &Ell<Int>) -> Result<Self, Int> {
+impl Point {
+    fn add(&self, other: &Self, curve: &Ell) -> Result<Self, BigInt> {
         if self.is_inf() {
             return Ok(other.clone());
         }
@@ -198,47 +177,47 @@ where
         }
         let xdif = &self.x - &other.x;
         let n = &curve.n;
-        if xdif == Int::zero() {
-            if &(&self.y + &other.y) % n == Int::zero() {
+        if xdif == BigInt::zero() {
+            if &(&self.y + &other.y) % n == BigInt::zero() {
                 return Ok(Self::inf());
             }
             let lambda = &(&self.x * &self.x * 3) + &curve.a;
-            let lambda = &lambda % n;
-            let den = &(&self.y * 2) % n;
+            let lambda: BigInt = &lambda % n;
+            let den: BigInt = &(&self.y * 2) % n;
             let den2 = &(&den * &den) % n;
             let den3 = &(&den2 * &den) % n;
-            let x3 = &lambda * &lambda - &(&self.x * 2) * &den2;
+            let x3 = &lambda * &lambda - (&self.x * 2) * &den2;
             let y3 = &lambda * &(&(&self.x * &den2) - &x3);
             let y3 = y3 - &self.y * &den3;
             return Self {
-                x: zmod::<Int>(&(x3 * den), n),
-                y: zmod::<Int>(&y3, n),
+                x: zmod::<BigInt>(&(x3 * den), n),
+                y: zmod::<BigInt>(&y3, n),
                 z: den3,
             }
             .simplify(curve);
         }
-        let lambda = zmod::<Int>(&(&self.y - &other.y), n);
+        let lambda = zmod::<BigInt>(&(&self.y - &other.y), n);
         let xdif2 = &(&xdif * &xdif) % n;
         let xdif3 = &(&xdif2 * &xdif) % n;
         let x3 = &lambda * &lambda - &(&self.x + &other.x) * &xdif2;
         let y3 = &lambda * &(&(&self.x * &xdif2) - &x3);
         let y3 = y3 - &self.y * &xdif3;
         Self {
-            x: zmod::<Int>(&(x3 * xdif), n),
-            y: zmod::<Int>(&y3, n),
+            x: zmod::<BigInt>(&(x3 * xdif), n),
+            y: zmod::<BigInt>(&y3, n),
             z: xdif3,
         }
         .simplify(curve)
     }
-    fn mul(&self, mut e: Int, curve: &Ell<Int>) -> Result<Self, Int> {
+    fn mul(&self, mut e: BigInt, curve: &Ell) -> Result<Self, BigInt> {
         let mut sum = Self::inf();
         let mut cur = self.clone();
-        while e > Int::zero() {
-            if &e % 2 == Int::one() {
+        while e > BigInt::zero() {
+            if &e % 2 == BigInt::one() {
                 sum = sum.add(&cur, curve)?;
             }
             e /= 2;
-            if e == Int::zero() {
+            if e == BigInt::zero() {
                 break;
             }
             cur = cur.add(&cur, curve)?;
@@ -247,73 +226,118 @@ where
     }
     fn inf() -> Self {
         Self {
-            x: Int::zero(),
-            y: Int::one(),
-            z: Int::zero(),
+            x: BigInt::zero(),
+            y: BigInt::one(),
+            z: BigInt::zero(),
         }
     }
     fn is_inf(&self) -> bool {
-        self.z == Int::zero()
+        self.z == BigInt::zero()
     }
-    fn simplify(&self, curve: &Ell<Int>) -> Result<Self, Int> {
-        if self.z == Int::zero() {
+    fn simplify(&self, curve: &Ell) -> Result<Self, BigInt> {
+        if self.z == BigInt::zero() {
             return Ok(Self::inf());
         }
         let n = &curve.n;
-        let invz = inv::<Int>(&self.z, n)?;
+        let invz = inv(&self.z, n)?;
         let x = &(&self.x * &invz) % n;
         let y = &(&self.y * &invz) % n;
         Ok(Self {
             x,
             y,
-            z: Int::one(),
+            z: BigInt::one(),
         })
     }
 }
 
 /// Perform extended gcd.
 /// Returns (g, x, y) that satisfies g = gcd(a, b), g = xa + yb.
+fn extgcd(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
+    if false {
+        extgcd_binary(a, b)
+    } else {
+        extgcd_division(a, b)
+    }
+}
 #[allow(clippy::many_single_char_names)]
-fn extgcd<Int: Zero + One + Eq + Sub<Output = Int> + Clone>(a: &Int, b: &Int) -> (Int, Int, Int)
-where
-    for<'a> &'a Int: Mul<&'a Int, Output = Int>
-        + Sub<&'a Int, Output = Int>
-        + Div<&'a Int, Output = Int>
-        + Rem<&'a Int, Output = Int>,
-{
-    if b == &Int::zero() {
-        return (a.clone(), Int::one(), Int::zero());
+fn extgcd_division(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
+    if b == &BigInt::zero() {
+        return (a.clone(), BigInt::one(), BigInt::zero());
     }
     let q = a / b;
     let r = a - &(b * &q);
-    let (g, x, y) = extgcd::<Int>(b, &r);
+    let (g, x, y) = extgcd_division(b, &r);
     // bx + ry = g
     // bx + (a - bq)y = g
     // ya + (x - qy)b = g
     let newy = x - &q * &y;
     (g, y, newy)
 }
+fn extgcd_binary(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
+    if b == &BigInt::zero() {
+        return (a.clone(), BigInt::one(), BigInt::zero());
+    }
+    if a == &BigInt::zero() {
+        return (b.clone(), BigInt::zero(), BigInt::one());
+    }
+    if a < &BigInt::zero() {
+        let (g, x, y) = extgcd(&-a, b);
+        return (g, -x, y);
+    }
+    if b < &BigInt::zero() {
+        let (g, x, y) = extgcd(a, &-b);
+        return (g, x, -y);
+    }
+    let za = a.trailing_zeros().unwrap_or(0);
+    let zb = b.trailing_zeros().unwrap_or(0);
+    let z = za.min(zb);
+    let a = a >> z;
+    let b = b >> z;
+    let (g, x, y) = if za <= zb {
+        extgcd_1(&a, &b)
+    } else {
+        let (g, y, x) = extgcd_1(&b, &a);
+        (g, x, y)
+    };
+    (g << z, x, y)
+}
+
+fn extgcd_1(a: &BigInt, b: &BigInt) -> (BigInt, BigInt, BigInt) {
+    debug_assert!(a % 2 == BigInt::one(), "{a}, {b}");
+    if b % 2 == BigInt::zero() {
+        let b1 = b >> 1;
+        let (g, mut x, mut y) = extgcd_1(a, &b1);
+        if &y % 2 == BigInt::zero() {
+            y >>= 1;
+        } else {
+            x -= b1;
+            y += a;
+            debug_assert_eq!(&y % 2, BigInt::zero());
+            y >>= 1;
+        }
+        return (g, x, y);
+    }
+    if a < b {
+        let (g, x, y) = extgcd_1(b, a);
+        return (g, y, x);
+    }
+    let ab = a - b;
+    if ab == BigInt::zero() {
+        return (b.clone(), BigInt::zero(), BigInt::one());
+    }
+    let (g, x, y) = extgcd_1(b, &ab);
+    (g, y.clone(), x - &y)
+}
 
 /// Computes a^{-1} mod mo, or returns gcd(a, mo) if a and mo are not coprime.
 /// mo should be positive.
-fn inv<
-    Int: Zero + One + Eq + Ord + Sub<Output = Int> + Signed + for<'a> AddAssign<&'a Int> + Clone,
->(
-    a: &Int,
-    mo: &Int,
-) -> Result<Int, Int>
-where
-    for<'a> &'a Int: Mul<&'a Int, Output = Int>
-        + Sub<&'a Int, Output = Int>
-        + Div<&'a Int, Output = Int>
-        + Rem<&'a Int, Output = Int>,
-{
-    let (g, x, _y) = extgcd::<Int>(a, mo);
-    if g.abs() != Int::one() {
+fn inv(a: &BigInt, mo: &BigInt) -> Result<BigInt, BigInt> {
+    let (g, x, _y) = extgcd(a, mo);
+    if g.abs() != BigInt::one() {
         return Err(g.abs());
     }
     // g = \pm 1. Now xg = 1 (mod mo) holds.
-    Ok(zmod::<Int>(&(x * g), mo))
+    Ok(zmod::<BigInt>(&(&x * &g), mo))
 }
 
 /// Computes x % mo. The answer is always in [0, mo).
@@ -337,12 +361,30 @@ mod tests {
 
     #[test]
     fn add_works_0() {
-        let curve = Ell { a: 3, n: 5 };
+        let curve = Ell {
+            a: 3.into(),
+            n: 5.into(),
+        };
         assert_eq!(
-            Point { x: 2, y: 1, z: 1 }
-                .add(&Point { x: 1, y: 4, z: 1 }, &curve)
-                .unwrap(),
-            Point { x: 1, y: 1, z: 1 }
+            Point {
+                x: 2.into(),
+                y: 1.into(),
+                z: 1.into()
+            }
+            .add(
+                &Point {
+                    x: 1.into(),
+                    y: 4.into(),
+                    z: 1.into()
+                },
+                &curve
+            )
+            .unwrap(),
+            Point {
+                x: 1.into(),
+                y: 1.into(),
+                z: 1.into()
+            }
         );
     }
 
@@ -350,41 +392,69 @@ mod tests {
     fn add_works_1() {
         // https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization#An_example
         let n = 455839i64;
-        let curve = Ell { a: 5, n };
+        let curve = Ell {
+            a: 5.into(),
+            n: n.into(),
+        };
         assert_eq!(
-            Point { x: 1, y: 1, z: 1 }
-                .add(&Point { x: 1, y: 1, z: 1 }, &curve)
-                .unwrap(),
             Point {
-                x: 14,
-                y: n - 53,
-                z: 1
+                x: 1.into(),
+                y: 1.into(),
+                z: 1.into()
+            }
+            .add(
+                &Point {
+                    x: 1.into(),
+                    y: 1.into(),
+                    z: 1.into()
+                },
+                &curve
+            )
+            .unwrap(),
+            Point {
+                x: 14.into(),
+                y: (n - 53).into(),
+                z: 1.into()
             }
         );
     }
 
     #[test]
     fn mul_works_0() {
-        let curve = Ell { a: 3, n: 5 };
-        let a = Point { x: 1, y: 1, z: 1 };
-        assert!(a.mul(5, &curve).unwrap().is_inf());
+        let curve = Ell {
+            a: 3.into(),
+            n: 5.into(),
+        };
+        let a = Point {
+            x: 1.into(),
+            y: 1.into(),
+            z: 1.into(),
+        };
+        assert!(a.mul(5.into(), &curve).unwrap().is_inf());
     }
 
     #[test]
     fn mul_works_1() {
         // https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization#An_example
         let n = 455839i64;
-        let curve = Ell { a: 5, n };
-        let mut pt = Point { x: 1, y: 1, z: 1 };
+        let curve = Ell {
+            a: 5.into(),
+            n: n.into(),
+        };
+        let mut pt = Point {
+            x: 1.into(),
+            y: 1.into(),
+            z: 1.into(),
+        };
         let mut i = 1;
         let factor = loop {
-            pt = match pt.mul(i, &curve) {
+            pt = match pt.mul(i.into(), &curve) {
                 Ok(pt) => pt,
                 Err(factor) => break factor,
             };
             i += 1;
         };
-        assert_eq!(factor, 599);
+        assert_eq!(factor, 599.into());
     }
 
     #[test]
