@@ -4,7 +4,7 @@ use std::{io, time::Instant};
 
 use clap::Parser;
 use num::BigInt;
-use rust_number_theory::ecm::{self, EcmStats};
+use rust_number_theory::ecm::EcmStats;
 use rust_number_theory::ecm_parallel;
 
 #[derive(Parser)]

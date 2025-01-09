@@ -128,8 +128,8 @@ fn ecm_oneshot_parallel(pts: Vec<Point>, curves: Vec<Ell>, b1: u64, b2: u64) -> 
         let mut cur_e = init;
         let p6 = {
             let mut tmp = Vec::with_capacity(k);
-            for i in 0..k {
-                tmp.push((joint[i].0.clone(), joint[i].0.clone(), joint[i].1.clone()));
+            for elem in &joint {
+                tmp.push((elem.0.clone(), elem.0.clone(), elem.1.clone()));
             }
             let p2 = Point::many_adds(&tmp)?;
             for i in 0..k {
@@ -182,6 +182,14 @@ impl Point {
     fn many_adds(pts: &[(Self, Self, Ell)]) -> Result<Vec<Self>, BigInt> {
         let mut points = Vec::with_capacity(pts.len());
         for (p1, p2, curve) in pts {
+            if p1.is_inf() {
+                points.push(p2.clone());
+                continue;
+            }
+            if p2.is_inf() {
+                points.push(p1.clone());
+                continue;
+            }
             let xdif = &p1.x - &p2.x;
             let n = &curve.n;
             if xdif == BigInt::zero() {
@@ -235,8 +243,8 @@ impl Point {
                 break;
             }
             let mut dat = vec![];
-            for i in 0..k {
-                dat.push((cur[i].0.clone(), cur[i].0.clone(), cur[i].1.clone()));
+            for elem in &cur {
+                dat.push((elem.0.clone(), elem.0.clone(), elem.1.clone()));
             }
             let tmp = Self::many_adds(&dat)?;
             for i in 0..k {
@@ -251,6 +259,9 @@ impl Point {
             y: BigInt::one(),
             z: BigInt::zero(),
         }
+    }
+    fn is_inf(&self) -> bool {
+        self.z.is_zero()
     }
     fn many_simplify(pts: &[Self], n: &BigInt) -> Result<Vec<Self>, BigInt> {
         let k = pts.len();
@@ -303,101 +314,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_works_0() {
+    fn many_simplify_works_0() {
         let curve = Ell {
             a: 3.into(),
             n: 5.into(),
         };
-        assert_eq!(
+        let pts = vec![
             Point {
                 x: 2.into(),
                 y: 1.into(),
-                z: 1.into()
-            }
-            .add(
-                &Point {
-                    x: 1.into(),
-                    y: 4.into(),
-                    z: 1.into()
-                },
-                &curve
-            )
-            .unwrap(),
+                z: 4.into(),
+            },
+            Point::inf(),
             Point {
                 x: 1.into(),
-                y: 1.into(),
-                z: 1.into()
-            }
-        );
-    }
-
-    #[test]
-    fn add_works_1() {
-        // https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization#An_example
-        let n = 455839i64;
-        let curve = Ell {
-            a: 5.into(),
-            n: n.into(),
-        };
+                y: 4.into(),
+                z: 3.into(),
+            },
+            Point {
+                x: 2.into(),
+                y: 3.into(),
+                z: 2.into(),
+            },
+        ];
+        let simplified = Point::many_simplify(&pts, &curve.n).unwrap();
         assert_eq!(
+            simplified[0],
             Point {
-                x: 1.into(),
-                y: 1.into(),
-                z: 1.into()
-            }
-            .add(
-                &Point {
-                    x: 1.into(),
-                    y: 1.into(),
-                    z: 1.into()
-                },
-                &curve
-            )
-            .unwrap(),
-            Point {
-                x: 14.into(),
-                y: (n - 53).into(),
-                z: 1.into()
+                x: 3.into(),
+                y: 4.into(),
+                z: 1.into(),
             }
         );
-    }
-
-    #[test]
-    fn mul_works_0() {
-        let curve = Ell {
-            a: 3.into(),
-            n: 5.into(),
-        };
-        let a = Point {
-            x: 1.into(),
-            y: 1.into(),
-            z: 1.into(),
-        };
-        assert!(a.mul(5.into(), &curve).unwrap().is_inf());
-    }
-
-    #[test]
-    fn mul_works_1() {
-        // https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization#An_example
-        let n = 455839i64;
-        let curve = Ell {
-            a: 5.into(),
-            n: n.into(),
-        };
-        let mut pt = Point {
-            x: 1.into(),
-            y: 1.into(),
-            z: 1.into(),
-        };
-        let mut i = 1;
-        let factor = loop {
-            pt = match pt.mul(i.into(), &curve) {
-                Ok(pt) => pt,
-                Err(factor) => break factor,
-            };
-            i += 1;
-        };
-        assert_eq!(factor, 599.into());
+        assert_eq!(simplified[1], Point::inf());
+        assert_eq!(
+            simplified[2],
+            Point {
+                x: 2.into(),
+                y: 3.into(),
+                z: 1.into(),
+            }
+        );
+        assert_eq!(
+            simplified[3],
+            Point {
+                x: 1.into(),
+                y: 4.into(),
+                z: 1.into(),
+            }
+        );
     }
 
     #[test]
