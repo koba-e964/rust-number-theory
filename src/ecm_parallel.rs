@@ -2,13 +2,10 @@ use num::bigint::RandBigInt;
 use num::{BigInt, One, Zero};
 use std::collections::HashMap;
 
+use crate::ecm::{select_b, ECMConfig, EcmStats};
 use crate::inverse::{inv, zmod};
 use crate::perfect_power::perfect_power;
 use crate::prime;
-
-pub struct EcmStats {
-    pub curve_count: u64,
-}
 
 /// Factorizes an integer.
 /// This function calls other functions as subroutines.
@@ -63,25 +60,6 @@ pub fn factorize_verbose(x: &BigInt, verbose: bool) -> (Vec<(BigInt, u64)>, EcmS
     (result, EcmStats { curve_count: count })
 }
 
-/// Select appropriate B1.
-pub(crate) fn select_b(n: &BigInt) -> u64 {
-    if n <= &BigInt::from(1000u64) {
-        return 4;
-    }
-    let lnx = n.bits() as f64 * 2.0f64.ln() / 2.0;
-    let lnlnx = lnx.ln();
-    let b = (lnx * lnlnx / 2.0).sqrt().exp(); // L(p)^{1/sqrt(2)}
-    b as u64
-}
-
-/// Configuration for ECM.
-#[allow(clippy::upper_case_acronyms)]
-pub struct ECMConfig {
-    pub b1: u64,
-    pub b2: u64,
-    pub verbose: bool,
-}
-
 /// Finds a factor.
 #[allow(clippy::many_single_char_names)]
 pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
@@ -90,25 +68,37 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
     let mut rng = rand::thread_rng();
 
     let mut count = 0u64;
+    let parallel_count = 10; // TODO: make this configurable
 
     loop {
         count += 1;
         if conf.verbose {
-            eprintln!("Trying curve {}, B1 = {}, B2 = {}", count, conf.b1, conf.b2);
+            eprintln!(
+                "Trying curves {}, B1 = {}, B2 = {}",
+                count, conf.b1, conf.b2
+            );
         }
-        // randomly pick a
-        let a = rng.gen_bigint_range(&1.into(), n);
-        let curve = Ell { a, n: n.clone() };
+        // randomly pick curves
+        let mut curves = vec![];
+        for _ in 0..parallel_count {
+            let a = rng.gen_bigint_range(&1.into(), n);
+            let curve = Ell { a, n: n.clone() };
+            curves.push(curve);
+        }
 
-        // randomly select a point
-        let x = rng.gen_bigint_range(&1.into(), n);
-        let y = rng.gen_bigint_range(&1.into(), n);
-        let pt = Point {
-            x,
-            y,
-            z: BigInt::one(),
-        };
-        if let Err(fac) = ecm_oneshot(pt, curve, conf.b1, conf.b2) {
+        // randomly select points
+        let mut points = vec![];
+        for _ in 0..parallel_count {
+            let x = rng.gen_bigint_range(&1.into(), n);
+            let y = rng.gen_bigint_range(&1.into(), n);
+            let pt = Point {
+                x,
+                y,
+                z: BigInt::one(),
+            };
+            points.push(pt);
+        }
+        if let Err(fac) = ecm_oneshot_parallel(points, curves, conf.b1, conf.b2) {
             if fac == BigInt::one() || &fac == n {
                 continue;
             }
@@ -121,30 +111,50 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
     }
 }
 
-fn ecm_oneshot(mut pt: Point, curve: Ell, b1: u64, b2: u64) -> Result<(), BigInt> {
-    for k in 1..b1 + 1 {
-        pt = pt.mul(k.into(), &curve)?;
-        if pt.is_inf() {
-            return Ok(());
+fn ecm_oneshot_parallel(pts: Vec<Point>, curves: Vec<Ell>, b1: u64, b2: u64) -> Result<(), BigInt> {
+    let k = pts.len();
+    let mut joint = Vec::with_capacity(k);
+    for i in 0..k {
+        joint.push((pts[i].clone(), curves[i].clone()));
+    }
+    for mult in 1..b1 + 1 {
+        let mut tmp = Point::many_muls(&joint, mult.into())?;
+        for i in 0..k {
+            joint[i].0 = std::mem::take(&mut tmp[i]);
         }
     }
     // Step 2: try all primes in range (b1, b2]
     for &init in &[b1.saturating_sub(1) / 6 * 6 + 1, (b1 + 1) / 6 * 6 - 1] {
         let mut cur_e = init;
         let p6 = {
-            let p2 = pt.add(&pt, &curve)?;
-            let p4 = p2.add(&p2, &curve)?;
-            p2.add(&p4, &curve)?
+            let mut tmp = Vec::with_capacity(k);
+            for i in 0..k {
+                tmp.push((joint[i].0.clone(), joint[i].0.clone(), joint[i].1.clone()));
+            }
+            let p2 = Point::many_adds(&tmp)?;
+            for i in 0..k {
+                tmp[i].0 = p2[i].clone();
+                tmp[i].1 = p2[i].clone();
+            }
+            let p4 = Point::many_adds(&tmp)?;
+            for i in 0..k {
+                tmp[i].1 = p4[i].clone();
+            }
+            Point::many_adds(&tmp)?
         };
-        pt = pt.mul(init.into(), &curve)?;
-        if pt.is_inf() {
-            return Ok(());
+        let tmp = Point::many_muls(&joint, init.into())?;
+        for i in 0..k {
+            joint[i].0 = tmp[i].clone();
+        }
+        let mut tmp = Vec::with_capacity(k);
+        for i in 0..k {
+            tmp.push((joint[i].0.clone(), p6[i].clone(), joint[i].1.clone()));
         }
         while cur_e <= b2 {
             cur_e += 6;
-            pt = pt.add(&p6, &curve)?;
-            if pt.is_inf() {
-                return Ok(());
+            let result = Point::many_adds(&tmp)?;
+            for i in 0..k {
+                tmp[i].0 = result[i].clone();
             }
         }
     }
@@ -152,7 +162,7 @@ fn ecm_oneshot(mut pt: Point, curve: Ell, b1: u64, b2: u64) -> Result<(), BigInt
 }
 
 /// Projective coordinates
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Point {
     x: BigInt,
     y: BigInt,
@@ -169,59 +179,69 @@ struct Ell {
 }
 
 impl Point {
-    fn add(&self, other: &Self, curve: &Ell) -> Result<Self, BigInt> {
-        if self.is_inf() {
-            return Ok(other.clone());
-        }
-        if other.is_inf() {
-            return Ok(self.clone());
-        }
-        let xdif = &self.x - &other.x;
-        let n = &curve.n;
-        if xdif == BigInt::zero() {
-            if &(&self.y + &other.y) % n == BigInt::zero() {
-                return Ok(Self::inf());
+    fn many_adds(pts: &[(Self, Self, Ell)]) -> Result<Vec<Self>, BigInt> {
+        let mut points = Vec::with_capacity(pts.len());
+        for (p1, p2, curve) in pts {
+            let xdif = &p1.x - &p2.x;
+            let n = &curve.n;
+            if xdif == BigInt::zero() {
+                if &(&p1.y + &p2.y) % n == BigInt::zero() {
+                    points.push(Self::inf());
+                    continue;
+                }
+                let lambda = &(&p1.x * &p1.x * 3) + &curve.a;
+                let lambda: BigInt = &lambda % n;
+                let den: BigInt = &(&p1.y * 2) % n;
+                let den2 = &(&den * &den) % n;
+                let den3 = &(&den2 * &den) % n;
+                let x3 = &lambda * &lambda - (&p1.x * 2) * &den2;
+                let y3 = &lambda * &(&(&p1.x * &den2) - &x3);
+                let y3 = y3 - &p1.y * &den3;
+                points.push(Self {
+                    x: zmod::<BigInt>(&(x3 * den), n),
+                    y: zmod::<BigInt>(&y3, n),
+                    z: den3,
+                });
+            } else {
+                let lambda = zmod::<BigInt>(&(&p1.y - &p2.y), n);
+                let xdif2 = &(&xdif * &xdif) % n;
+                let xdif3 = &(&xdif2 * &xdif) % n;
+                let x3 = &lambda * &lambda - &(&p1.x + &p2.x) * &xdif2;
+                let y3 = &lambda * &(&(&p1.x * &xdif2) - &x3);
+                let y3 = y3 - &p1.y * &xdif3;
+                points.push(Self {
+                    x: zmod::<BigInt>(&(x3 * xdif), n),
+                    y: zmod::<BigInt>(&y3, n),
+                    z: xdif3,
+                });
             }
-            let lambda = &(&self.x * &self.x * 3) + &curve.a;
-            let lambda: BigInt = &lambda % n;
-            let den: BigInt = &(&self.y * 2) % n;
-            let den2 = &(&den * &den) % n;
-            let den3 = &(&den2 * &den) % n;
-            let x3 = &lambda * &lambda - (&self.x * 2) * &den2;
-            let y3 = &lambda * &(&(&self.x * &den2) - &x3);
-            let y3 = y3 - &self.y * &den3;
-            return Self {
-                x: zmod::<BigInt>(&(x3 * den), n),
-                y: zmod::<BigInt>(&y3, n),
-                z: den3,
-            }
-            .simplify(curve);
         }
-        let lambda = zmod::<BigInt>(&(&self.y - &other.y), n);
-        let xdif2 = &(&xdif * &xdif) % n;
-        let xdif3 = &(&xdif2 * &xdif) % n;
-        let x3 = &lambda * &lambda - &(&self.x + &other.x) * &xdif2;
-        let y3 = &lambda * &(&(&self.x * &xdif2) - &x3);
-        let y3 = y3 - &self.y * &xdif3;
-        Self {
-            x: zmod::<BigInt>(&(x3 * xdif), n),
-            y: zmod::<BigInt>(&y3, n),
-            z: xdif3,
-        }
-        .simplify(curve)
+        Self::many_simplify(&points, &pts[0].2.n)
     }
-    fn mul(&self, mut e: BigInt, curve: &Ell) -> Result<Self, BigInt> {
-        let mut sum = Self::inf();
-        let mut cur = self.clone();
+    fn many_muls(pts: &[(Self, Ell)], mut e: BigInt) -> Result<Vec<Self>, BigInt> {
+        let k = pts.len();
+        let mut sum = vec![Self::inf(); k];
+        let mut cur = pts.to_vec();
         while e > BigInt::zero() {
             if &e % 2 == BigInt::one() {
-                sum = sum.add(&cur, curve)?;
+                let mut dat = vec![];
+                for i in 0..k {
+                    dat.push((sum[i].clone(), cur[i].0.clone(), cur[i].1.clone()));
+                }
+                sum = Self::many_adds(&dat)?;
             }
             e /= 2;
             if e == BigInt::zero() {
                 break;
             }
-            cur = cur.add(&cur, curve)?;
+            let mut dat = vec![];
+            for i in 0..k {
+                dat.push((cur[i].0.clone(), cur[i].0.clone(), cur[i].1.clone()));
+            }
+            let tmp = Self::many_adds(&dat)?;
+            for i in 0..k {
+                cur[i].0 = tmp[i].clone();
+            }
         }
         Ok(sum)
     }
@@ -232,22 +252,49 @@ impl Point {
             z: BigInt::zero(),
         }
     }
-    fn is_inf(&self) -> bool {
-        self.z == BigInt::zero()
-    }
-    fn simplify(&self, curve: &Ell) -> Result<Self, BigInt> {
-        if self.z == BigInt::zero() {
-            return Ok(Self::inf());
+    fn many_simplify(pts: &[Self], n: &BigInt) -> Result<Vec<Self>, BigInt> {
+        let k = pts.len();
+        let mut zarr = vec![];
+        let mut zprod = BigInt::one();
+        for i in 0..k {
+            zarr.push(pts[i].z.clone());
+            if zarr[i] != BigInt::zero() {
+                zprod = &zprod * &zarr[i];
+            }
         }
-        let n = &curve.n;
-        let invz = inv(&self.z, n)?;
-        let x = &(&self.x * &invz) % n;
-        let y = &(&self.y * &invz) % n;
-        Ok(Self {
-            x,
-            y,
-            z: BigInt::one(),
-        })
+        let mut zacc_l = vec![BigInt::one(); k + 1];
+        let mut zacc_r = vec![BigInt::one(); k + 1];
+        for i in 0..k {
+            if zarr[i] != BigInt::zero() {
+                zacc_l[i + 1] = &(&zacc_l[i] * &zarr[i]) % n;
+            } else {
+                zacc_l[i + 1] = zacc_l[i].clone();
+            }
+        }
+        for i in (0..k).rev() {
+            if zarr[i] != BigInt::zero() {
+                zacc_r[i] = &(&zacc_r[i + 1] * &zarr[i]) % n;
+            } else {
+                zacc_r[i] = zacc_r[i + 1].clone();
+            }
+        }
+        let invzprod = inv(&zprod, n)?;
+        let mut result = Vec::with_capacity(k);
+        for i in 0..k {
+            if zarr[i] == BigInt::zero() {
+                result.push(Self::inf());
+                continue;
+            }
+            let invz = &zacc_l[i] * &zacc_r[i + 1] * &invzprod % n;
+            let x = &(&pts[i].x * &invz) % n;
+            let y = &(&pts[i].y * &invz) % n;
+            result.push(Self {
+                x,
+                y,
+                z: BigInt::one(),
+            })
+        }
+        Ok(result)
     }
 }
 

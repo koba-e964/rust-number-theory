@@ -5,6 +5,7 @@ use std::{io, time::Instant};
 use clap::Parser;
 use num::BigInt;
 use rust_number_theory::ecm::{self, EcmStats};
+use rust_number_theory::ecm_parallel;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -40,7 +41,7 @@ fn main() {
 
     let value = BigInt::from_str(&value).unwrap();
     let start = Instant::now();
-    let (result, ecm_stats) = ecm::factorize_verbose(&value, cli.verbose);
+    let (result, ecm_stats) = ecm_parallel::factorize_verbose(&value, cli.verbose);
     let elapsed = start.elapsed();
     present(cli, result, ecm_stats, elapsed);
 }
