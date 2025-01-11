@@ -68,7 +68,7 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
     let mut rng = rand::thread_rng();
 
     let mut count = 0u64;
-    let parallel_count = 10; // TODO: make this configurable
+    let parallel_count = (conf.b1 as f64).sqrt() as usize; // TODO: find better values
 
     loop {
         count += 1;
@@ -106,7 +106,7 @@ pub fn ecm(n: &BigInt, conf: ECMConfig) -> (BigInt, u64) {
             if conf.verbose {
                 eprintln!("Found factor after {count} trials");
             }
-            return (fac, count);
+            return (fac, count * parallel_count as u64);
         }
     }
 }
