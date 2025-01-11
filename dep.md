@@ -5,6 +5,7 @@ Modules in a section below can depend on modules in sections above.
 - ecm
 - factorize
 - perfect_power
+- inverse
 
 ## elementary polynomial operations
 - discriminant
