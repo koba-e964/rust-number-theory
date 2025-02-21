@@ -7,6 +7,7 @@ use rust_number_theory::prime_decomp::decompose;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use rust_number_theory::algebraic::Algebraic;
@@ -68,14 +69,23 @@ fn polynomial_unbridge(x: Vec<BigIntBridge>) -> Polynomial<BigInt> {
     Polynomial { dat }
 }
 
+#[derive(Debug, Clone)]
+struct Opts {
+    config: PathBuf,
+}
+
+fn opts() -> Opts {
+    use bpaf::*;
+    let config = positional("YAML|TOML").help("Configuration file");
+    construct!(Opts { config })
+        .to_options()
+        .fallback_to_usage()
+        .run()
+}
+
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() <= 1 {
-        eprintln!("This executable needs a configuration file (YAML or TOML).");
-        std::process::exit(1);
-    }
-    let filename = args[1].clone();
-    let content = fs::read_to_string(filename).unwrap();
+    let opts = opts();
+    let content = fs::read_to_string(&opts.config).unwrap();
     let input_config: InputConfig = if let Ok(conf) = serde_yaml::from_str(&content) {
         conf
     } else {
