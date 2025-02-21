@@ -85,7 +85,9 @@ fn opts() -> Opts {
 
 fn main() {
     let opts = opts();
-    let content = fs::read_to_string(&opts.config).unwrap();
+    // ideally we want &opts.config here so opts remains valid for further use, but
+    // since CI uses an old clippy - do as it says instead.
+    let content = fs::read_to_string(opts.config).unwrap();
     let input_config: InputConfig = if let Ok(conf) = serde_yaml::from_str(&content) {
         conf
     } else {
