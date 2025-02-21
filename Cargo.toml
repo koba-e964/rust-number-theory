@@ -15,7 +15,7 @@ rand = "0.8"
 # requiring tags for structs, enums and tuples.
 serde_yaml = "0.8"
 toml = "0.8"
-bpaf = "0.9"
+bpaf = { version = "0.9", features = ["derive"] }
 
 [dependencies.serde_json]
 version = "1"
@@ -37,9 +37,6 @@ path = "./number-theory-linear"
 version = "0.1"
 path = "./number-theory-elementary"
 
-[dependencies.clap]
-version = "4"
-features = ["derive"]
 
 [workspace]
 members = ["number-theory-elementary", "number-theory-linear"]
