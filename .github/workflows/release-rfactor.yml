@@ -1,0 +1,116 @@
+name: Build rfactor, release rfactor
+
+on:
+  push:
+    branches: [master]
+    tags: ["*.*.*"]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: --deny warnings
+  RUSTDOCFLAGS: --deny warnings
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Reference: https://github.com/itchyny/log2hex/blob/v0.1.2/.github/workflows/ci.yaml
+  build-release-rfactor:
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        os: [linux, darwin, windows]
+        arch: [x86-64, aarch64]
+        include:
+          - os: linux
+            arch: x86-64
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: linux
+            arch: aarch64
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: darwin
+            arch: x86-64
+            runs-on: macos-latest
+            target: x86_64-apple-darwin
+          - os: darwin
+            arch: aarch64
+            runs-on: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows
+            arch: x86-64
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows
+            arch: aarch64
+            runs-on: windows-latest
+            target: aarch64-pc-windows-msvc
+      fail-fast: false
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch all history for tags
+      - name: Install target toolchain
+        run: |
+          rustup target add ${{ matrix.target }}
+          if [[ ${{ matrix.os }} == linux && ${{ matrix.arch }} == aarch64 ]]; then
+            sudo apt-get install gcc-aarch64-linux-gnu
+            echo "RUSTFLAGS=-C linker=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+          fi
+      - name: Build
+        run: cargo build --release --target=${{ matrix.target }} --bin rfactor
+      - name: Set executable name
+        id: executable
+        run: echo name=rfactor >> "$GITHUB_OUTPUT"
+      - name: Run rfactor
+        # Skip running because execution fails somehow on these targets
+        if: matrix.target != 'aarch64-unknown-linux-gnu' && matrix.target != 'aarch64-pc-windows-msvc'
+        run: target/${{ matrix.target }}/release/${{ steps.executable.outputs.name }} 12345
+      - name: Set artifact name
+        id: artifact
+        run: echo name=${{ steps.executable.outputs.name }}_$(git describe --tags)_${{ matrix.os }}_${{ matrix.arch }} >> "$GITHUB_OUTPUT"
+      - name: Build artifact
+        run: |
+          mkdir ${{ steps.artifact.outputs.name }}
+          cp README.md LICENSE target/${{ matrix.target }}/release/${{ steps.executable.outputs.name }} ${{ steps.artifact.outputs.name }}
+          if [[ ${{ matrix.os }} == windows ]]; then
+            powershell Compress-Archive -Path ${{ steps.artifact.outputs.name }} -DestinationPath ${{ steps.artifact.outputs.name }}.zip
+          else
+            zip -r ${{ steps.artifact.outputs.name }}.zip ${{ steps.artifact.outputs.name }}
+          fi
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ steps.artifact.outputs.name }}.zip
+
+  release-rfactor:
+    needs: [build-release-rfactor]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded/
+          merge-multiple: true
+      - name: Setup release body
+        run: echo ${{ github.ref_name }} >release-body.txt
+      - name: Create release
+        uses: ncipollo/release-action@440c8c1cb0ed28b9f43e4d1d670870f059653174 # v1.16.0
+        with:
+          name: Release ${{ github.ref_name }}
+          bodyFile: release-body.txt
+          artifacts: downloaded/*
