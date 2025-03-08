@@ -7,15 +7,23 @@ Implemented algorithms include:
 - Integer Factorization
 
 ## Factorization
-You can install `rfactor` (factorization utility command) by running:
-```
-cargo install --git https://github.com/koba-e964/rust-number-theory --bin rfactor
-```
+You can install `rfactor` (factorization utility command) via:
+
+- brew:
+  ```
+  brew install koba-e964/tap/rfactor
+  ```
+
+- building from source:
+
+  ```
+  cargo install --git https://github.com/koba-e964/rust-number-theory --bin rfactor
+  ```
 `rfactor` seems to sometimes outperform the [`factor`](https://en.wikipedia.org/wiki/Factor_(Unix)) command.
 
 You can install a specific version by running:
 ```
-cargo install --git https://github.com/koba-e964/rust-number-theory --bin rfactor --tag [something like 0.1]
+cargo install --git https://github.com/koba-e964/rust-number-theory --bin rfactor --tag [something like 0.1.1]
 ```
 
 ## Examples
