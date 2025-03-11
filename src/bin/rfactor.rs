@@ -2,24 +2,24 @@ use std::io::Write;
 use std::str::FromStr;
 use std::{io, time::Instant};
 
-use clap::Parser;
 use num::BigInt;
 use rust_number_theory::ecm::EcmStats;
 use rust_number_theory::ecm_parallel;
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[derive(bpaf::Bpaf)]
+#[bpaf(options)]
 struct Cli {
-    /// Optional integer argument to factorize
-    integer: Option<String>,
-    #[arg(short, long)]
+    #[bpaf(short, long)]
     verbose: bool,
-    #[arg(long)]
+
     json: bool,
+    /// Optional integer argument to factorize
+    #[bpaf(positional)]
+    integer: Option<String>,
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let cli = cli().run();
 
     // You can check the value provided by positional arguments, or option arguments
     let value = if let Some(integer) = cli.integer.as_deref() {
