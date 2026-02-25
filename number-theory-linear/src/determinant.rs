@@ -28,9 +28,12 @@ pub fn determinant(a: &[Vec<BigRational>]) -> BigRational {
         }
         for j in i + 1..n {
             let factor = &a[j][i] / &a[i][i];
-            for k in i..n {
-                let tmp = &factor * &a[i][k];
-                a[j][k] -= tmp;
+            let (left, right) = a.split_at_mut(j);
+            let row_i = &left[i];
+            let row_j = &mut right[0];
+            for (a_jk, a_ik) in row_j.iter_mut().skip(i).zip(row_i.iter().skip(i)) {
+                let tmp = &factor * a_ik;
+                *a_jk -= tmp;
             }
         }
         result *= &a[i][i];

@@ -21,7 +21,7 @@ fn is_prime(a: usize) -> bool {
     }
     let mut d = 2;
     while d * d <= a {
-        if a % d == 0 {
+        if a.is_multiple_of(d) {
             return false;
         }
         d += 1;
