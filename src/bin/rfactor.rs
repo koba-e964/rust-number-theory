@@ -65,10 +65,7 @@ fn parse_cli() -> Result<Cli, String> {
         return Err(format!("unknown argument: {arg}"));
     }
     if free.len() > 1 {
-        return Err(format!(
-            "unexpected extra positional argument: {}",
-            free[1]
-        ));
+        return Err(format!("unexpected extra positional argument: {}", free[1]));
     }
     let integer = free.pop();
     Ok(Cli {

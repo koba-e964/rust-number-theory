@@ -22,8 +22,8 @@ pub fn solve_linear_system<Int: Clone + Integer + NumAssign>(
     let mut col = 0;
     for row in 0..n {
         let mut nxt = n;
-        for i in col..n {
-            if a[row][i] != Ratio::zero() {
+        for (i, value) in a[row].iter().enumerate().skip(col) {
+            if *value != Ratio::zero() {
                 nxt = i;
                 break;
             }
