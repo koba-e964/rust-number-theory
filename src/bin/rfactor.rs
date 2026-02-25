@@ -6,26 +6,26 @@ use num::BigInt;
 use rust_number_theory::ecm::EcmStats;
 use rust_number_theory::ecm_parallel;
 
-#[derive(bpaf::Bpaf)]
-#[bpaf(options)]
 struct Cli {
-    #[bpaf(short, long)]
     verbose: bool,
-
     json: bool,
-    /// Optional integer argument to factorize
-    #[bpaf(positional)]
     integer: Option<String>,
 }
 
 fn main() {
-    let cli = cli().run();
+    let cli = match parse_cli() {
+        Ok(cli) => cli,
+        Err(err) => {
+            eprintln!("{err}");
+            eprintln!();
+            eprintln!("Use --help for usage.");
+            std::process::exit(2);
+        }
+    };
 
-    // You can check the value provided by positional arguments, or option arguments
     let value = if let Some(integer) = cli.integer.as_deref() {
         integer.to_string()
     } else {
-        // Reads from stdin
         print!("> ");
         io::stdout().flush().ok().unwrap();
         let mut s = "".to_string();
@@ -44,6 +44,62 @@ fn main() {
     let (result, ecm_stats) = ecm_parallel::factorize_verbose(&value, cli.verbose);
     let elapsed = start.elapsed();
     present(cli, result, ecm_stats, elapsed);
+}
+
+fn parse_cli() -> Result<Cli, String> {
+    let mut args = pico_args::Arguments::from_env();
+    if args.contains(["-h", "--help"]) {
+        print_help();
+        std::process::exit(0);
+    }
+    let verbose = args.contains(["-v", "--verbose"]);
+    let json = args.contains("--json");
+    let mut free = Vec::new();
+    for arg in args.finish() {
+        let arg = arg
+            .into_string()
+            .map_err(|arg| format!("non-UTF-8 argument: {:?}", arg))?;
+        free.push(arg);
+    }
+    if let Some(arg) = free.iter().find(|arg| looks_like_option(arg)) {
+        return Err(format!("unknown argument: {arg}"));
+    }
+    if free.len() > 1 {
+        return Err(format!(
+            "unexpected extra positional argument: {}",
+            free[1]
+        ));
+    }
+    let integer = free.pop();
+    Ok(Cli {
+        integer,
+        verbose,
+        json,
+    })
+}
+
+fn looks_like_option(arg: &str) -> bool {
+    if !arg.starts_with('-') || arg == "-" {
+        return false;
+    }
+    let bytes = arg.as_bytes();
+    if bytes.len() >= 2 && bytes[1].is_ascii_digit() {
+        return false;
+    }
+    true
+}
+
+fn print_help() {
+    println!("rfactor {}", env!("CARGO_PKG_VERSION"));
+    println!("Factorize an integer.");
+    println!();
+    println!("Usage:");
+    println!("  rfactor [OPTIONS] [integer]");
+    println!();
+    println!("Options:");
+    println!("  -v, --verbose   Show verbose ECM statistics");
+    println!("      --json      Output in JSON format");
+    println!("  -h, --help      Print help");
 }
 
 fn present(
