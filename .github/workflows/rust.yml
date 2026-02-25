@@ -21,7 +21,6 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - "1.74.1" # 2023-12-07, meant to be about 1 year ago
           - beta
           - nightly
 
