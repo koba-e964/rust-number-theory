@@ -79,9 +79,9 @@ Reason: very small runtime footprint, straightforward flag/positional parsing, n
 - Should parse failures keep panic-like behavior for invalid integers, or be normalized to clean error messages + exit code?
 
 ## Implementation Checklist
-- [ ] Remove `clap` and add `pico-args` in `Cargo.toml`.
-- [ ] Replace derive-based CLI parsing in `src/bin/rfactor.rs`.
-- [ ] Preserve existing stdin fallback and output formatting behavior.
-- [ ] Run functional CLI checks for positional, flags, stdin, and unknown args.
-- [ ] Run size checks (`cargo bloat` + binary file size) and record deltas.
-- [ ] Update checklist with completed items during implementation.
+- [x] Remove `clap` and add `pico-args` in `Cargo.toml`.
+- [x] Replace derive-based CLI parsing in `src/bin/rfactor.rs`.
+- [x] Preserve existing stdin fallback and output formatting behavior.
+- [x] Run functional CLI checks for positional, flags, stdin, and unknown args.
+- [x] Run size checks (`cargo bloat` + binary file size) and record deltas.
+- [x] Update checklist with completed items during implementation.
