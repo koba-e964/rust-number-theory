@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-check
+        name: cargo c
+        entry: cargo c --all-targets --all --locked
+        language: system
+        pass_filenames: false
+      - id: cargo-fmt
+        name: cargo fmt --check
+        entry: cargo fmt --all -- --check
+        language: system
+        pass_filenames: false
