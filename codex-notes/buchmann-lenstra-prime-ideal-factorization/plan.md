@@ -93,12 +93,12 @@ Approach:
 - Should benchmark coverage include multiple degree classes (e.g., quadratic + cubic), or is one per path sufficient for this change?
 
 ## Implementation Checklist
-- [ ] Implement `src/prime_decomp/bl.rs::decompose`.
-- [ ] Add BL/simple dispatch in `src/prime_decomp/mod.rs` based on `p | (Z_K : Z[theta])`.
-- [ ] Add decomposition regression tests for both path types.
-- [ ] Add deterministic test case that previously panicked in simple path.
-- [ ] Add `src/bin/bench-prime-decomp.rs` with standard-library timing for simple and BL paths.
-- [ ] Compute and print mean and standard deviation for each benchmark scenario.
-- [ ] Update `Cargo.toml` `rust-version` to an approximately one-year-old stable release if the current value is too old.
-- [ ] Run test verification (`cargo test` or targeted equivalent).
-- [ ] Run benchmark executable in release mode and capture timings.
+- [x] Implement `src/prime_decomp/bl.rs::decompose`.
+- [x] Add BL/simple dispatch in `src/prime_decomp/mod.rs` based on `p | (Z_K : Z[theta])`.
+- [x] Add decomposition regression tests for both path types.
+- [x] Add deterministic test case that previously panicked in simple path.
+- [x] Add `src/bin/bench-prime-decomp.rs` with standard-library timing for simple and BL paths.
+- [x] Compute and print mean and standard deviation for each benchmark scenario.
+- [x] Update `Cargo.toml` `rust-version` to an approximately one-year-old stable release if the current value is too old.
+- [x] Run test verification (`cargo test` or targeted equivalent).
+- [x] Run benchmark executable in release mode and capture timings.
