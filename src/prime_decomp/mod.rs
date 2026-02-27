@@ -31,7 +31,7 @@ pub fn decompose<'mul>(
 
 #[cfg(test)]
 mod tests {
-    use num::{traits::Pow, One};
+    use num::traits::Pow;
 
     use crate::{integral_basis, polynomial::Polynomial};
 
@@ -46,13 +46,13 @@ mod tests {
         let p: BigInt = 2.into();
         let result = decompose(&theta, &int_basis, &mult_table, &p);
         assert!(!result.is_empty());
-        let mut total = BigInt::one();
+        let mut total: BigInt = 1.into();
         for (ideal, e) in result {
             assert!(e > 0);
-            assert!(ideal.norm() >= BigInt::one());
+            assert!(ideal.norm() >= BigInt::from(2));
             total *= ideal.norm().pow(e);
         }
-        assert!(total >= BigInt::one());
+        assert_eq!(total, p.pow(2usize));
     }
 
     #[test]
@@ -66,5 +66,26 @@ mod tests {
         let (ideal, e) = &result[0];
         assert_eq!(*e, 1);
         assert_eq!(ideal.norm(), p.pow(theta.deg()));
+    }
+
+    #[test]
+    fn decompose_cubic_x3_plus_9x_plus_1_at_3() {
+        let theta = Algebraic::new(Polynomial::from_raw(vec![
+            1.into(),
+            9.into(),
+            0.into(),
+            1.into(),
+        ]));
+        let int_basis = integral_basis::find_integral_basis(&theta);
+        let mult_table = int_basis.get_mult_table(&theta);
+        let p: BigInt = 3.into();
+        let result = decompose(&theta, &int_basis, &mult_table, &p);
+        assert_eq!(result.len(), 2);
+        for (ideal, _) in &result {
+            assert_eq!(ideal.norm(), 3.into());
+        }
+        let mut exponents = result.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
+        exponents.sort();
+        assert_eq!(exponents, vec![1, 2]);
     }
 }
