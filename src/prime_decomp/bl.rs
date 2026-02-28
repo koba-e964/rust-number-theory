@@ -139,11 +139,11 @@ fn fallback_decompose<'mul>(
         if is_power_of_p(&norm, p).is_none() {
             continue;
         }
-        if !candidates.iter().any(|v: &Ideal<'mul>| *v == cand) {
+        if !candidates.contains(&cand) {
             candidates.push(cand);
         }
     }
-    candidates.sort_by(|a, b| a.norm().cmp(&b.norm()));
+    candidates.sort_by_key(|a| a.norm());
     if candidates.is_empty() {
         return None;
     }
