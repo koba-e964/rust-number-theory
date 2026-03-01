@@ -4,7 +4,7 @@ use num::{BigInt, BigRational, One, Zero};
 
 use crate::{
     algebraic::Algebraic, ideal::Ideal, mult_table::MultTable, order::Order, poly_mod,
-    polynomial::Polynomial,
+    polynomial::Polynomial, prime::is_prime,
 };
 
 // References:
@@ -257,7 +257,7 @@ pub fn decompose<'mul>(
     let target_norm = p.pow(theta.deg() as u32);
     if decomposition
         .iter()
-        .all(|(ideal, _)| !ideal.norm().is_one())
+        .all(|(ideal, _)| !ideal.norm().is_one() && is_prime(&ideal.norm()))
         && norm_prod == target_norm
     {
         return decomposition;

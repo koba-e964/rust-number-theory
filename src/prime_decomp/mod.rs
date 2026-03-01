@@ -37,6 +37,36 @@ mod tests {
 
     use super::*;
 
+    fn p_ideal<'mul>(p: &BigInt, mult_table: &'mul MultTable) -> Ideal<'mul> {
+        let mut pelem = vec![BigInt::from(0); mult_table.deg()];
+        pelem[0] = p.clone();
+        Ideal::principal(&pelem, mult_table)
+    }
+
+    fn is_power_of_p(mut x: BigInt, p: &BigInt) -> bool {
+        if x <= BigInt::from(0) {
+            return false;
+        }
+        while &x % p == BigInt::from(0) {
+            x /= p;
+        }
+        x == BigInt::from(1)
+    }
+
+    fn product_from_decomposition<'mul>(factors: &[(Ideal<'mul>, usize)]) -> Ideal<'mul> {
+        assert!(!factors.is_empty());
+        let mut result = factors[0].0.clone();
+        for _ in 1..factors[0].1 {
+            result = &result * &factors[0].0;
+        }
+        for (ideal, e) in factors.iter().skip(1) {
+            for _ in 0..*e {
+                result = &result * ideal;
+            }
+        }
+        result
+    }
+
     #[test]
     fn decompose_dispatches_to_bl_for_index_dividing_prime() {
         // Q(sqrt(5)): Z_K = Z[(1 + sqrt(5)) / 2], so (Z_K : Z[sqrt(5)]) = 2.
@@ -47,12 +77,15 @@ mod tests {
         let result = decompose(&theta, &int_basis, &mult_table, &p);
         assert!(!result.is_empty());
         let mut total: BigInt = 1.into();
-        for (ideal, e) in result {
-            assert!(e > 0);
-            assert!(ideal.norm() >= BigInt::from(2));
-            total *= ideal.norm().pow(e);
+        for (ideal, e) in &result {
+            assert!(*e > 0);
+            assert!(is_power_of_p(ideal.norm(), &p));
+            total *= ideal.norm().pow(*e);
         }
-        assert_eq!(total, p.pow(2usize));
+        assert_eq!(total, p.clone().pow(2usize));
+        let lhs = product_from_decomposition(&result);
+        let rhs = p_ideal(&p, &mult_table);
+        assert_eq!(lhs, rhs);
     }
 
     #[test]
@@ -65,7 +98,11 @@ mod tests {
         assert_eq!(result.len(), 1);
         let (ideal, e) = &result[0];
         assert_eq!(*e, 1);
-        assert_eq!(ideal.norm(), p.pow(theta.deg()));
+        assert_eq!(ideal.norm(), p.clone().pow(theta.deg()));
+        assert!(is_power_of_p(ideal.norm(), &p));
+        let lhs = product_from_decomposition(&result);
+        let rhs = p_ideal(&p, &mult_table);
+        assert_eq!(lhs, rhs);
     }
 
     #[test]
@@ -83,9 +120,14 @@ mod tests {
         assert_eq!(result.len(), 2);
         for (ideal, _) in &result {
             assert_eq!(ideal.norm(), 3.into());
+            assert!(is_power_of_p(ideal.norm(), &p));
         }
         let mut exponents = result.into_iter().map(|(_, e)| e).collect::<Vec<_>>();
         exponents.sort();
         assert_eq!(exponents, vec![1, 2]);
+        let result = decompose(&theta, &int_basis, &mult_table, &p);
+        let lhs = product_from_decomposition(&result);
+        let rhs = p_ideal(&p, &mult_table);
+        assert_eq!(lhs, rhs);
     }
 }
