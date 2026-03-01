@@ -18,5 +18,6 @@ pub mod poly_mod;
 pub mod poly_z;
 pub mod polynomial;
 pub mod prime;
+/// Decomposition of rational primes into prime ideals in number fields.
 pub mod prime_decomp;
 pub mod resultant;

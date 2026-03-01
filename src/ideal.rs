@@ -80,6 +80,10 @@ impl<'mul> Ideal<'mul> {
         let new_ideal = self + &num_ideal;
         new_ideal == *self
     }
+
+    pub fn as_hnf(&self) -> &HNF {
+        &self.hnf
+    }
 }
 
 impl<'mul> Add for &Ideal<'mul> {
