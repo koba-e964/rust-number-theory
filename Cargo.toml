@@ -10,7 +10,7 @@ default-run = "rust-number-theory"
 [dependencies]
 # This rand dependency must be 0.8 because num-bigint:0.4.4 depends on rand:0.8.
 # https://github.com/rust-num/num-bigint/blob/num-bigint-0.4.4/Cargo.toml#L54
-rand = "0.8"
+rand = "0.9"
 # serde_yaml introduced a breaking change in 0.9.0:
 # requiring tags for structs, enums and tuples.
 serde_yaml = "0.8"
